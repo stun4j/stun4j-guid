@@ -51,7 +51,7 @@ public final class Preconditions {
    */
   public static void checkState(boolean b, String errorMessageTemplate, int p1) {
     if (!b) {
-      throw new IllegalStateException(Strings.lenientFormat(errorMessageTemplate, p1));
+      throw new IllegalStateException(StringUtils.lenientFormat(errorMessageTemplate, p1));
     }
   }
 }
