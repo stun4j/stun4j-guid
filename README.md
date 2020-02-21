@@ -1,11 +1,12 @@
 # Stun4J Guid
-### 分布式ID生成器 全局唯一、趋势递增、极速、易于使用  / [English](README-en.md) 
+### Distributed global-unique-id generator, ultra fast, easy to use / [中文版](README_zh_CN.md) 
 
 
-| 稳定版 | JDK版本兼容性 | 发布日期 |
+| Stable Release Version | JDK Version compatibility | Release Date |
 | ------------- | ------------- | ------------|
 | 1.0.0  | 1.8+ | 02/?/2020 |
 
+
 ## License
 
-**Stun4J Guid** 采用 **Apache Software License, Version 2.0**.
+This project is licensed under **Apache Software License, Version 2.0**.
