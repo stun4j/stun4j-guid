@@ -1,4 +1,4 @@
-package com.stun4j.guid;
+package com.stun4j.guid.utils;
 
 import java.util.function.Supplier;
 
