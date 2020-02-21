@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Properties>
+		<!-- for high performance -->
+		<Property name="append">false</Property>
+		<Property name="logPattern">[%d] %p (%c{1.}) %m %n</Property>
+
+		<!-- for production&development use(recommended) -->
+		<!-- <Property name="append">true</Property> -->
+		<!-- <Property name="logPattern">[%d] %p (%c{1.}) [%t] %m%n</Property> -->
+
+		<Property name="immediateFlush">true</Property>
+		<Property name="logVerbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
+
+		<Property name="logRootPath">logs-test</Property>
+		<Property name="logRollFileSize">100MB</Property>
+		<Property name="logRollMaxCnt">100</Property>
+	</Properties>
+	<Appenders>
+		<Console name="CONSOLE-WARN" target="SYSTEM_OUT">
+			<ThresholdFilter level="WARN" />
+			<PatternLayout pattern="${logPattern}" />
+		</Console>
+
+		<RollingRandomAccessFile name="FILE-INFO" fileName="${logRootPath}/info.log"
+			filePattern="${logRootPath}/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.gz" immediateFlush="${immediateFlush}"
+			append="${append}">
+			<ThresholdFilter level="INFO" />
+			<PatternLayout pattern="${logPattern}" />
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="${logRollFileSize}" />
+			</Policies>
+			<DefaultRolloverStrategy max="${logRollMaxCnt}" />
+		</RollingRandomAccessFile>
+
+		<RollingRandomAccessFile name="FILE-ERROR" fileName="${logRootPath}/error.log"
+			filePattern="${logRootPath}/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.gz" immediateFlush="${immediateFlush}"
+			append="${append}">
+			<ThresholdFilter level="ERROR" />
+			<PatternLayout pattern="${logPattern}" />
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="${logRollFileSize}" />
+			</Policies>
+			<DefaultRolloverStrategy max="${logRollMaxCnt}" />
+		</RollingRandomAccessFile>
+
+		<RollingRandomAccessFile name="FILE-WARN" fileName="${logRootPath}/warn.log"
+			filePattern="${logRootPath}/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.gz" immediateFlush="${immediateFlush}"
+			append="${append}">
+			<ThresholdFilter level="WARN" />
+			<PatternLayout pattern="${logPattern}" />
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="${logRollFileSize}" />
+			</Policies>
+			<DefaultRolloverStrategy max="${logRollMaxCnt}" />
+		</RollingRandomAccessFile>
+
+		<RollingRandomAccessFile name="FILE-DEBUG" fileName="${logRootPath}/debug.log"
+			filePattern="${logRootPath}/$${date:yyyy-MM}/debug-%d{yyyy-MM-dd}-%i.log.gz" immediateFlush="${immediateFlush}"
+			append="${append}">
+			<ThresholdFilter level="DEBUG" />
+			<PatternLayout pattern="${logVerbosePattern}" />
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="${logRollFileSize}" />
+			</Policies>
+			<DefaultRolloverStrategy max="${logRollMaxCnt}" />
+		</RollingRandomAccessFile>
+
+		<Console name="CONSOLE-DEBUG" target="SYSTEM_OUT">
+			<ThresholdFilter level="DEBUG" />
+			<PatternLayout pattern="${logVerbosePattern}" />
+		</Console>
+
+		<Console name="CONSOLE-INFO" target="SYSTEM_OUT">
+			<ThresholdFilter level="INFO" />
+			<PatternLayout pattern="${logPattern}" />
+		</Console>
+	</Appenders>
+	<Loggers>
+		<!-- <Logger name="com.stun4j.guid" level="DEBUG" includeLocation="true" additivity="false"> -->
+		<!-- <AppenderRef ref="CONSOLE-DEBUG" /> -->
+		<!-- <AppenderRef ref="FILE-DEBUG" /> -->
+		<!-- </Logger> -->
+
+		<Root level="INFO" includeLocation="false">
+			<AppenderRef ref="CONSOLE-INFO" />
+			<!-- <AppenderRef ref="CONSOLE-WARN" /> -->
+			<!-- <AppenderRef ref="FILE-INFO" /> -->
+			<!-- <AppenderRef ref="FILE-ERROR" /> -->
+			<!-- <AppenderRef ref="FILE-WARN" /> -->
+			<!-- <AppenderRef ref="FILE-DEBUG" /> -->
+		</Root>
+	</Loggers>
+</Configuration> 
