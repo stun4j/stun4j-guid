@@ -8,7 +8,7 @@
  */
 package com.stun4j.guid.utils;
 
-// from guava@28.2-jre
+// from [com.google.guava/guava "28.2-jre"]
 public final class Preconditions {
   private Preconditions() {
   }
@@ -51,7 +51,7 @@ public final class Preconditions {
    */
   public static void checkState(boolean b, String errorMessageTemplate, int p1) {
     if (!b) {
-      throw new IllegalStateException(StringUtils.lenientFormat(errorMessageTemplate, p1));
+      throw new IllegalStateException(Strings.lenientFormat(errorMessageTemplate, p1));
     }
   }
 }

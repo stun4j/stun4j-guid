@@ -30,7 +30,7 @@ import com.google.common.io.Closeables;
 /**
  * This class adds back functionality that was removed in Guava v16.0.
  */
-// from curator@2.13.0
+// from [org.apache.curator/curator-recipes "2.13.0"]
 public class CloseableUtils {
   private static final Logger LOG = LoggerFactory.getLogger(CloseableUtils.class);
 

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.stun4j.guid.utils.CloseableUtils;
 import com.stun4j.guid.utils.NetworkUtils;
 import com.stun4j.guid.utils.Preconditions;
-import com.stun4j.guid.utils.StringUtils;
+import com.stun4j.guid.utils.Strings;
 
 /** @author Jay Meng */
 public abstract class ZkGuidNode {
@@ -35,7 +35,7 @@ public abstract class ZkGuidNode {
   private static final String ZK_NODES_PATH_ROOT = "/nodes";
   private static final String ZK_LOCK_PATH_ROOT = "/lock";
   private static final AtomicBoolean STARTED = new AtomicBoolean(false);
-  //TODO mj:registry abstraction extract,prevent curator coupling
+  // TODO mj:registry abstraction extract,prevent curator coupling
   private static CuratorFramework client = null;
 
   public static short[] start(String zkConnectStr) throws Exception {
@@ -63,7 +63,7 @@ public abstract class ZkGuidNode {
       String processName = ManagementFactory.getRuntimeMXBean().getName();
       String processId = processName.substring(0, processName.indexOf('@'));
       String selfIp = NetworkUtils.getLocalHost(ipStartWith);
-      String selfNodePath = String.format("%s/%s@%s", ZK_NODES_PATH_ROOT, selfIp, processId);
+      String selfNodePath = Strings.lenientFormat("%s/%s@%s", ZK_NODES_PATH_ROOT, selfIp, processId);
 
       // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024' should be safe
       return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
@@ -139,7 +139,7 @@ public abstract class ZkGuidNode {
            * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works
            * wrong
            */
-          String binStr = StringUtils.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
+          String binStr = Strings.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
           String lowAsDatacenterId = binStr.substring(0, 5);
           String highAsWorkerId = binStr.substring(5, 10);
           short datacenterId = Short.parseShort(lowAsDatacenterId, 2);

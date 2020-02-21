@@ -8,6 +8,14 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A very simple network util
+ * <p>
+ * * detect&get best available local ip-address<br>
+ * * be able to pick ip by specifing ip-prefix
+ * 
+ * @author Jay Meng
+ */
 public final class NetworkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(NetworkUtils.class);
   private static volatile InetAddress LOCAL_ADDRESS = null;
@@ -93,6 +101,6 @@ public final class NetworkUtils {
   }
 
   private NetworkUtils() {
-  };
+  }
 
 }
