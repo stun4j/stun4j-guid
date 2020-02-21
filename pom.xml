@@ -10,9 +10,15 @@
 	<artifactId>stun4j-guid</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
-	<name>Stun4j Guid</name>
+	<name>Stun4J Guid</name>
 	<description>Distributed global-unique-id generator,ultra fast,easy to use</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>
+
+  <organization>
+    <url>https://github.com/stun4j</url>
+    <name>Stun4J</name>
+  </organization>
+  <inceptionYear>2020</inceptionYear>
 
 	<licenses>
 		<license>
@@ -25,12 +31,29 @@
 		<developer>
 			<name>Jay Meng</name>
 			<email>spirit.jay@163.com</email>
-			<organization>Stun4j</organization>
+			<organization>Stun4J</organization>
 			<organizationUrl>https://github.com/stun4j</organizationUrl>
 			<timezone>UTC+8</timezone>
 		</developer>
 	</developers>
 
+  <scm>
+    <connection>scm:git:git://github.com/stun4j/stun4j-guid.git</connection>
+    <developerConnection>scm:git:git@github.com:stun4j/stun4j-guid.git</developerConnection>
+    <url>https://github.com/stun4j/stun4j-guid</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>Github</system>
+    <url>https://github.com/stun4j/stun4j-guid/issues</url>
+  </issueManagement>
+  
+<!--   <ciManagement> -->
+<!--     <system>Travis</system> -->
+<!--     <url>https://travis-ci.org/stun4j/stun4j-guid</url> -->
+<!--   </ciManagement> -->
+  
 	<properties>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
@@ -125,6 +148,21 @@
 					</execution>
 				</executions>
 			</plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadoc</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -158,6 +196,13 @@
 	</build>
 
 	<repositories>
+    <repository>
+      <id>stun4j-snapshots</id>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <url>https://oss.sonatype.org/content/groups/public/</url>
+    </repository>
 		<repository>
 			<id>nexus-aliyun</id>
 			<snapshots>
@@ -168,13 +213,6 @@
 			</releases>
 			<name>Nexus aliyun</name>
 			<url>http://maven.aliyun.com/nexus/content/groups/public</url>
-		</repository>
-		<repository>
-			<id>stun4j-snapshots</id>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<url>https://oss.sonatype.org/content/groups/public/</url>
 		</repository>
 	</repositories>
 	<pluginRepositories>
