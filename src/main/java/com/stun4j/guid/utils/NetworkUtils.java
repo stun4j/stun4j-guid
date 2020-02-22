@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 /**
  * A very simple network util
  * <p>
- * * detect&get best available local ip-address<br>
- * * be able to pick ip by specifing ip-prefix
+ * get best available local ip-address<br>
+ * be able to pick ip by specifing ip-prefix
  * 
  * @author Jay Meng
  */

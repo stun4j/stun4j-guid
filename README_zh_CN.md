@@ -8,4 +8,4 @@
 
 ## 开源许可协议
 
-本项目采用 **Apache Software License, Version 2.0**.
+本项目采用 **Apache Software License, Version 2.0**

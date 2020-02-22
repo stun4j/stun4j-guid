@@ -9,4 +9,4 @@
 
 ## License
 
-This project is licensed under **Apache Software License, Version 2.0**.
+This project is licensed under **Apache Software License, Version 2.0**
