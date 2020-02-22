@@ -5,8 +5,8 @@ import com.stun4j.guid.utils.Pair;
 public class ZkGuidNodeUsage {
 
   public static void main(String[] args) throws Exception {
-    Pair<Integer, Integer> nodePair = ZkGuidNode.start("localhost:2181");
-    LocalGuid guid = LocalGuid.init(nodePair);
+    Pair<Integer, Integer> node = ZkGuidNode.start("localhost:2181");
+    LocalGuid guid = LocalGuid.init(node);
     long id = guid.next();
     System.out.println(id);
 
