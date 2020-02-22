@@ -1,6 +1,30 @@
+/*-
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.stun4j.guid;
 
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.stun4j.guid.utils.Pair;
+import com.stun4j.guid.utils.Preconditions;
+import com.stun4j.guid.utils.Strings;
+import com.stun4j.guid.utils.Utils;
 
 /**
  * Guid generator,without any remote-coordination
@@ -11,7 +35,7 @@ import java.util.UUID;
  * @author Jay Meng
  */
 public final class LocalGuid {
-  // TODO mj:cross classloader unique?
+  private static final Logger LOG = LoggerFactory.getLogger(LocalGuid.class);
   // Fri Feb 14 16:12:19 CST 2020 1581667939311
   private final long epoch = 1581667939311L;
   private final long workerIdBits = 5L;
@@ -24,44 +48,40 @@ public final class LocalGuid {
   private final long datacenterIdShift = sequenceBits + workerIdBits;
   private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
   private final long sequenceMask = -1L ^ (-1L << sequenceBits);
-  private long datacenterId = -1;
-  private long workerId = -1;
+  private long datacenterId = -1L;
+  private long workerId = -1L;
   private long sequence = 0L;
   private long lastTimestamp = -1L;
 
   private static final LocalGuid INSTANCE = new LocalGuid();
   private static boolean initialized = false;
 
-  public synchronized static LocalGuid init(long datacenterId, long workerId) {
+  public static LocalGuid init(int datacenterId, int workerId) {
+    return init(Pair.of(datacenterId, workerId));
+  }
+
+  public synchronized static LocalGuid init(Pair<Integer, Integer> nodePair) {
     if (initialized) {
       return INSTANCE;
     }
-    INSTANCE.datacenterId = datacenterId;
-    INSTANCE.workerId = workerId;
+    INSTANCE.datacenterId = nodePair.getLeft();
+    INSTANCE.workerId = nodePair.getRight();
     initialized = true;
     return INSTANCE;
   }
 
   public static LocalGuid instance() {
-    if (!initialized) {
-      throw new IllegalArgumentException("must be initialized first");
-    }
-    // TODO mj:works?dirty?compare to volatile?
-    if (INSTANCE.datacenterId <= -1 || INSTANCE.workerId <= -1) {
-      throw new IllegalArgumentException("being initialized");
-    }
+    Preconditions.checkArgument(initialized, "must be initialized first");
+    // TODO mj:instead of marking 'synchronized' on the whole,hope this way works
+    Preconditions.checkState(INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1, "being initialized");
     return INSTANCE;
   }
 
   private LocalGuid(long datacenterId, long workerId) {
-    if (datacenterId > maxDatacenterId || datacenterId < 0) {
-      throw new IllegalArgumentException(
-          String.format("datacenter id can't be greater than %d or less than 0", maxDatacenterId));
-    }
-    if (workerId > maxWorkerId || workerId < 0) {
-      throw new IllegalArgumentException(
-          String.format("worker id can't be greater than %d or less than 0", maxWorkerId));
-    }
+    Preconditions.checkArgument(datacenterId <= maxDatacenterId && datacenterId >= 0,
+        "datacenter id can't be greater than %s or less than 0", maxDatacenterId);
+    Preconditions.checkArgument(workerId <= maxWorkerId && workerId >= 0,
+        "worker id can't be greater than %s or less than 0", maxWorkerId);
     this.datacenterId = datacenterId;
     this.workerId = workerId;
   }
@@ -71,17 +91,38 @@ public final class LocalGuid {
   }
 
   public synchronized long next() {
-    long timestamp = currentTimeMillis();
+    long timestamp = currentTimeMs();
 
-    // FIXME mj:time clock unexpected back,even under NTP env
-    if (timestamp < lastTimestamp) {
-      throw new RuntimeException(String.format("时钟倒退了 %dms,拒绝产生新的id", lastTimestamp - timestamp));
+    // handle time clock backwards(coz NTP is not safe)
+    if (timestamp < this.lastTimestamp) {
+      long timeLagMs = this.lastTimestamp - timestamp;
+      if (timeLagMs >= 5000) {
+        String msg = Strings.lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
+            lastTimestamp - timestamp);
+        LOG.error(msg);
+        throw new RuntimeException(msg);
+      }
+      LOG.warn("clock moving backwards detected [time lag={}ms],try self-healing now...", timeLagMs);
+      Pair<Long, Long> rtn = Utils.timeAwareRun((timeMsToChase) -> {
+        long curTimeMsChasing;
+        // TODO mj:step countdown,reduce cpu cost
+        while ((curTimeMsChasing = currentTimeMs()) < this.lastTimestamp) {
+          if (timeMsToChase-- > 0) {
+            Utils.sleepMs(1);
+          }
+        }
+        return curTimeMsChasing;
+      }, timeLagMs);
+      LOG.info("self-healed from clock moving backwards, cost {}ms", rtn.getLeft());
+      // now we've got timestamp chased
+      timestamp = rtn.getRight();
     }
 
+    // core process
     if (lastTimestamp == timestamp) {
       sequence = (sequence + 1) & sequenceMask;
       if (sequence == 0) {
-        timestamp = casGetNextMillis(lastTimestamp);
+        timestamp = casGetNextMs(lastTimestamp);
       }
     } else {
       sequence = 0L;
@@ -95,15 +136,15 @@ public final class LocalGuid {
         | sequence;
   }
 
-  private long casGetNextMillis(long lastTimestamp) {
-    long timestamp = currentTimeMillis();
+  private long casGetNextMs(long lastTimestamp) {
+    long timestamp = currentTimeMs();
     while (timestamp <= lastTimestamp) {
-      timestamp = currentTimeMillis();
+      timestamp = currentTimeMs();
     }
     return timestamp;
   }
 
-  private long currentTimeMillis() {
+  private long currentTimeMs() {
     return System.currentTimeMillis();
   }
 

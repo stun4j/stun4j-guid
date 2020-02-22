@@ -7,20 +7,20 @@ import java.util.concurrent.TimeUnit;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.stun4j.guid.utils.Utils;
 
 public class LocalGuidBenchmark {
   static final ExecutorService E = Executors.newWorkStealingPool();
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     LocalGuid guid = LocalGuid.init(0, 0);
     // warm round
-    for (int i = 0; i < 10_0000; i++) {
-      guid.next();
-    }
-    // start benchmark
+//    for (int i = 0; i < 10_0000; i++) {
+//      guid.next();
+//    }
+    // benchmark round
     MetricRegistry registry = new MetricRegistry();
     ConsoleReporter reporter = ConsoleReporter.forRegistry(registry).build();
-    // Slf4jReporter reporter = Slf4jReporter.forRegistry(registry).build();
     Meter meter = registry.meter("tps");
     long start = System.currentTimeMillis();
     reporter.start(0, 250, TimeUnit.MILLISECONDS);
@@ -32,5 +32,6 @@ public class LocalGuidBenchmark {
       meter.mark();
     }
     System.out.println(System.currentTimeMillis() - start);
+    Utils.sleepSeconds(30);
   }
 }

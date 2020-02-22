@@ -89,7 +89,7 @@
 		<Root level="INFO" includeLocation="false">
 			<AppenderRef ref="CONSOLE-INFO" />
 			<!-- <AppenderRef ref="CONSOLE-WARN" /> -->
-			<!-- <AppenderRef ref="FILE-INFO" /> -->
+			<AppenderRef ref="FILE-INFO" />
 			<!-- <AppenderRef ref="FILE-ERROR" /> -->
 			<!-- <AppenderRef ref="FILE-WARN" /> -->
 			<!-- <AppenderRef ref="FILE-DEBUG" /> -->

@@ -1,12 +1,12 @@
 package com.stun4j.guid;
 
+import com.stun4j.guid.utils.Pair;
+
 public class ZkGuidNodeUsage {
 
   public static void main(String[] args) throws Exception {
-    short[] nodeInfo = ZkGuidNode.start("localhost:2181");
-    short datacenterId = nodeInfo[0];
-    short workerId = nodeInfo[1];
-    LocalGuid guid = LocalGuid.init(datacenterId, workerId);
+    Pair<Integer, Integer> nodePair = ZkGuidNode.start("localhost:2181");
+    LocalGuid guid = LocalGuid.init(nodePair);
     long id = guid.next();
     System.out.println(id);
 

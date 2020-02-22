@@ -25,8 +25,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.io.Closeables;
-
 /**
  * This class adds back functionality that was removed in Guava v16.0.
  */

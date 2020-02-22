@@ -14,7 +14,35 @@
 package com.stun4j.guid.utils;
 
 // from [com.google.guava/guava "28.2-jre"]
+/** @author Jay Meng roughly removed '@Nullable' */
 public final class Preconditions {
+  /**
+   * Ensures the truth of an expression involving one or more parameters to the calling method.
+   *
+   * @param expression   a boolean expression
+   * @param errorMessage the exception message to use if the check fails; will be converted to a string using
+   *                     {@link String#valueOf(Object)}
+   * @throws IllegalArgumentException if {@code expression} is false
+   */
+  public static void checkArgument(boolean expression, Object errorMessage) {
+    if (!expression) {
+      throw new IllegalArgumentException(String.valueOf(errorMessage));
+    }
+  }
+
+  /**
+   * Ensures the truth of an expression involving one or more parameters to the calling method.
+   * <p>
+   * See {@link #checkArgument(boolean, String, Object...)} for details.
+   *
+   * @since 20.0 (varargs overload since 2.0)
+   */
+  public static void checkArgument(boolean b, String errorMessageTemplate, long p1) {
+    if (!b) {
+      throw new IllegalArgumentException(Strings.lenientFormat(errorMessageTemplate, p1));
+    }
+  }
+
   /**
    * Ensures the truth of an expression involving the state of the calling instance, but not involving any parameters to
    * the calling method.
@@ -52,6 +80,20 @@ public final class Preconditions {
    * @since 20.0 (varargs overload since 2.0)
    */
   public static void checkState(boolean b, String errorMessageTemplate, int p1) {
+    if (!b) {
+      throw new IllegalStateException(Strings.lenientFormat(errorMessageTemplate, p1));
+    }
+  }
+
+  /**
+   * Ensures the truth of an expression involving the state of the calling instance, but not involving any parameters to
+   * the calling method.
+   * <p>
+   * See {@link #checkState(boolean, String, Object...)} for details.
+   *
+   * @since 20.0 (varargs overload since 2.0)
+   */
+  public static void checkState(boolean b, String errorMessageTemplate, Object p1) {
     if (!b) {
       throw new IllegalStateException(Strings.lenientFormat(errorMessageTemplate, p1));
     }
