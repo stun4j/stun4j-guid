@@ -75,7 +75,7 @@ LocalGuid guid = LocalGuid.init(node);
 ## 参与
 * 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
 * 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
-* 喜欢本项目，不吝赐:star2: 
+* 不吝赐:star2: 
 
 ## 开源许可协议
 

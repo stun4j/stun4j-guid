@@ -49,7 +49,7 @@ long id2 = LocalGuid.instance().next();
 
 ```
 
-### Method 2：Use in conjunction with distributed coordinator (recommend \*, \" process/node identity uniqueness \" automatically maintained)：
+### Method 2：Use in conjunction with distributed coordinator (recommend\*, \" process/node identity uniqueness \" automatically maintained)：
 
 ```
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
@@ -76,7 +76,7 @@ LocalGuid guid = LocalGuid.init(node);
 To help Stun4J-Guid development you are encouraged to
 
 * For reporting bugs, provide suggestion/feedback, please open an [issue](https://github.com/stun4j/stun4j-guid/issues/new)
-* For contributing improvements or new features, please send in the pull request
+* For contributing improvements or new features, please send in the pull request and open an [issue](https://github.com/stun4j/stun4j-guid/issues/new) for discussion and progress tracking
 * Star :star2: the project
 
 ## License
