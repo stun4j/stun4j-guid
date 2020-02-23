@@ -82,7 +82,7 @@ public abstract class ZkGuidNode {
       String selfIp = NetworkUtils.getLocalHost(ipStartWith);
       String selfNodePath = Strings.lenientFormat("%s/%s@%s", ZK_NODES_PATH_ROOT, selfIp, processId);
 
-      // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024' should be safe
+      // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely limited
       return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
         try {
           // building a full-snapshot of all the cluster members->
