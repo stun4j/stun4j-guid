@@ -1,7 +1,7 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en.md) 
+### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README.md) 
 
 
 | 稳定版 | JDK版本兼容性 | 发布日期 |
