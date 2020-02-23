@@ -66,6 +66,8 @@ LocalGuid guid = LocalGuid.init(node);
 ## 路线图
 * 支持spring boot
 * 支持更多分布式协调者 如etcd
+* 支持Id语义定制
+* 克服时间敏感问题
 * TBD
 
 
