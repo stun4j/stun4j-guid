@@ -1,82 +1,84 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en.md) 
+### Distributed global-unique-id generator, ultra fast, monotonic increasing, easy to use / [中文版](README_zh_CN.md) 
 
 
-| 稳定版 | JDK版本兼容性 | 发布日期 |
+| Stable Release Version | JDK Version compatibility | Release Date |
 | ------------- | ------------- | ------------|
 | 1.0.0  | 1.8+ | 02/?/2020 |
 
+## Feature
+* Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
+* Clound-native friendly,fully workable on virtualization environment with floating ip/port i.e. k8s,docker etc.
+* Ultra fast on id-generating, **over million QPS per single process/node**
+* Monotonic increasing mechanism, based on twitter-snowflake algorithm, clock-backwards awarness,self-healable
+* The artifact is a very-small jar,with minimal dependencies, easy to use
 
-## 功能特性
-* 生成全局唯一的ID，适用于分布式环境(以进程为最小节点粒度，在单机/伪集群中照常工作)
-* 云原生环境友好，对IP、端口的漂移无感
-* 生成速度极快，轻松上**百万级TPS**
-* ID趋势递增，基于twitter-snowflake算法，针对时钟回退能够有限自愈
-* 制品为袖珍型jar包，依赖极少，易于使用和集成
+## How to get
+### Method 1: Maven Repository
 
-## 如何获取
-
-### 方式1：从Maven中央仓库获取
-在你工程的**pom.xml**中加入如下片段，即可从maven的中央仓库拉取：
+Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull stun4j-guid from the central maven repository, just add these to your pom.xml file:
 
 ```xml
-还在发布中...
+coming soon...
 ```
 
+### Method 2: Building from the sources
 
-### 方式2：通过源码构建
-执行如下maven命令：
+As it is maven project, buidling is just a matter of executing the following in your console:
 
-	mvn clean package
+	$ mvn clean package
 
-会在target目录中生成 stun4j-guid-VERSION.jar，放入你工程的classpath即可
+This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
-## 如何使用
-### 方式1：直接使用(适用于节点数少，希望或有能力自行维护\"进程/节点 的标识唯一性\"的应用)：
+## How to use
+### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \" process/node identity uniqueness \" by themselves)：
 
 ```
-//步骤1.初始化(仅需一次，一般即应用启动时)
-//datacenterId和workerId被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的
+//Step 1.Initialization (only once,usually when the application starts)
+/*DatacenterId and workerId are used to uniquely identify a process or node, 
+and the combination of the two must be 'unique'*/
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
-//步骤2.获取id
-//方式1:
+//Step 2.Get the id
+//Method 1:
 long id1 = guid.next();
-//方式2:
+//Method 2:
 long id2 = LocalGuid.instance().next();
 
 ```
 
-### 方式2：结合分布式协调者使用(推荐\*，\"进程/节点 的标识唯一性\"自动得到维护)：
+### Method 2：Use in conjunction with distributed coordinator (recommend \*, \" process/node identity uniqueness \" automatically maintained)：
 
 ```
-//步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
-Pair<Integer, Integer> node = ZkGuidNode.start("localhost:2181"/*zk地址*/);
+//Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
+Pair<Integer, Integer> node = ZkGuidNode.start("localhost:2181"/*zk address*/);
 LocalGuid guid = LocalGuid.init(node);
-//步骤2.获取id(略、同上)
+//Step 2.Get the id(same as above, omitted)
 ```
 
-## 注意事项
-* 本ID生成算法是时间敏感的，所以集群环境务必开启NTP服务(时钟同步)，保障总体正确性和可用性
-* 采用[Zookeeper](http://zookeeper.apache.org/)作为分布式协调者时，客户端采用[Curator](http://curator.apache.org/)和ZK进行通信，需要注意Curator和Zookeeper的[兼容性](http://curator.apache.org/zk-compatibility.html)问题
-* 一个集群支持的进程/节点数量的上限是1024，这是经典snowflake算法非常核心的一点，也就是说datacenterId和workerId的取值范围都是 **[**0,31**]**，所以有1024种组合，在本框架的实现中也充分映射了这个概念，比如对分布式协调者一个namespace下参与者的数量也做了相同的断言
-* **再次重申：datacenterId和workerId结合起来被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的**
 
-## 路线图
-* 支持spring boot
-* 支持更多分布式协调者 如etcd
-* 尽可能克服时间敏感问题
-* 支持Id语义定制
+## Notes
+* This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (clock synchronization) to ensure overall correctness and availability
+* When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the [compatibility](http://curator.apache.org/zk-compatibility.html) between Curator and Zookeeper
+* The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. under a namespace for distributed coordinator also did the same assertions in the number of participants
+* **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
+
+## Roadmap
+* To support Spring-Boot
+* To support more Distributed-Coordinator e.g. **etcd**
+* Try the best to solve the time-sensitive problem
+* To support ID semantic customization
 * TBD
 
+## Contributions
+To help Stun4J-Guid development you are encouraged to
 
-## 参与
-* 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
-* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
-* 喜欢本项目，不吝赐:star2: 
+* For reporting bugs, provide suggestion/feedback, please open an [issue](https://github.com/stun4j/stun4j-guid/issues/new)
+* For contributing improvements or new features, please send in the pull request
+* Star :star2: the project
 
-## 开源许可协议
+## License
 
-本项目采用 **Apache Software License, Version 2.0**
+This project is licensed under **Apache Software License, Version 2.0**
