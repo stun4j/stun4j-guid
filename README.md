@@ -62,7 +62,7 @@ LocalGuid guid = LocalGuid.init(node);
 ## Notes
 * This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (clock synchronization) to ensure overall correctness and availability
 * When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the [compatibility](http://curator.apache.org/zk-compatibility.html) between Curator and Zookeeper
-* The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. under a namespace for distributed coordinator also did the same assertions in the number of participants
+* The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
 * **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
 
 ## Roadmap

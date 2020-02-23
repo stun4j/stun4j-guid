@@ -61,7 +61,7 @@ LocalGuid guid = LocalGuid.init(node);
 ## 注意事项
 * 本ID生成算法是时间敏感的，所以集群环境务必开启NTP服务(时钟同步)，保障总体正确性和可用性
 * 采用[Zookeeper](http://zookeeper.apache.org/)作为分布式协调者时，客户端采用[Curator](http://curator.apache.org/)和ZK进行通信，需要注意Curator和Zookeeper的[兼容性](http://curator.apache.org/zk-compatibility.html)问题
-* 一个集群支持的进程/节点数量的上限是1024，这是经典snowflake算法非常核心的一点，也就是说datacenterId和workerId的取值范围都是 **[**0,31**]**，所以有1024种组合，在本框架的实现中也充分映射了这个概念，比如对分布式协调者一个namespace下参与者的数量也做了相同的断言
+* 一个集群支持的进程/节点数量的上限是1024，这是经典snowflake算法非常核心的一点，也就是说datacenterId和workerId的取值范围都是 **[**0,31**]**，所以有1024种组合，在本框架的实现中也充分映射了这个概念，比如对分布式协调者一个namespace下参与者的数量也做了相同的限制
 * **再次重申：datacenterId和workerId结合起来被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的**
 
 ## 路线图
