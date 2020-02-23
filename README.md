@@ -1,4 +1,5 @@
 # Stun4J Guid
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en.md) 
 
@@ -15,8 +16,25 @@
 * ID趋势递增，基于twitter-snowflake算法，针对时钟回退能够有限自愈
 * 制品为袖珍型jar包，依赖极少，易于使用和集成
 
-## 快速上手
-### 1.直接使用(适用于节点数少，希望或有能力自行维护\"进程or节点的标识唯一性\"的应用)：
+## 如何获取
+
+### 方式1：从Maven中央仓库获取
+在你工程的**pom.xml**中加入如下片段，即可从maven的中央仓库拉取：
+
+```xml
+还在发布中...
+```
+
+
+### 方式2：通过源码构建
+执行如下maven命令：
+
+	mvn clean package
+
+会在target目录中生成 stun4j-guid-VERSION.jar，放入你工程的classpath即可
+
+## 如何使用
+### 方式1：直接使用(适用于节点数少，希望或有能力自行维护\"进程or节点的标识唯一性\"的应用)：
 
 ```
 //步骤1.初始化(仅需一次，一般即应用启动时)
@@ -31,7 +49,7 @@ long id2 = LocalGuid.instance().next();
 
 ```
 
-### 2.结合分布式协调者使用(\*推荐\*，\"进程or节点的标识唯一性\"会自动得到维护)：
+### 方式2：结合分布式协调者使用(\*推荐\*，\"进程or节点的标识唯一性\"会自动得到维护)：
 
 ```
 //步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
