@@ -66,8 +66,8 @@ LocalGuid guid = LocalGuid.init(node);
 * **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
 
 ## Roadmap
-* To support Spring-Boot
-* To support more Distributed-Coordinator e.g. **etcd**
+* To support spring-boot
+* To support more distributed-coordinator e.g. **etcd**
 * Try the best to solve the time-sensitive problem
 * To support ID semantic customization
 * TBD
