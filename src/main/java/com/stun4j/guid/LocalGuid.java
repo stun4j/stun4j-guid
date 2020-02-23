@@ -17,6 +17,7 @@
 package com.stun4j.guid;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,10 +106,15 @@ public final class LocalGuid {
       LOG.warn("clock moving backwards detected [time lag={}ms],try self-healing now...", timeLagMs);
       Pair<Long, Long> rtn = Utils.timeAwareRun((timeMsToChase) -> {
         long curTimeMsChasing;
-        // TODO mj:step countdown,reduce cpu cost
+        // TODO mj:use random sleep time to reduce cpu cost
         while ((curTimeMsChasing = currentTimeMs()) < this.lastTimestamp) {
-          if (timeMsToChase-- > 0) {
-            Utils.sleepMs(1);
+          // if (timeMsToChase-- > 0) {
+          // Utils.sleepMs(1);
+          // }
+          if (timeMsToChase > 0) {
+            int randomSleepMs = ThreadLocalRandom.current().nextInt(5) + 1;
+            timeMsToChase = timeMsToChase - randomSleepMs;
+            Utils.sleepMs(randomSleepMs);
           }
         }
         return curTimeMsChasing;
