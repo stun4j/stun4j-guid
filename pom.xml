@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.0.1-SNAPHOST</version>
+	<version>1.0.1</version>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
