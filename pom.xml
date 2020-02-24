@@ -9,10 +9,10 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 
 	<name>Stun4J Guid</name>
-	<description>Distributed global-unique-id generator,ultra fast,easy to use</description>
+	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>
 
 	<organization>

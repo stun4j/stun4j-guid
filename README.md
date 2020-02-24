@@ -6,7 +6,7 @@
 
 | Stable Release Version | JDK Version compatibility | Release Date |
 | ------------- | ------------- | ------------|
-| 1.0.0  | 1.8+ | 02/?/2020 |
+| 1.0.0  | 1.8+ | 02/24/2020 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
