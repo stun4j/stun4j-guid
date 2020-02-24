@@ -56,17 +56,30 @@ public final class LocalGuid {
 
   private static final LocalGuid INSTANCE = new LocalGuid();
   private static boolean initialized = false;
+  private static boolean gate = false;
 
   public static LocalGuid init(int datacenterId, int workerId) {
     return init(Pair.of(datacenterId, workerId));
   }
 
-  public synchronized static LocalGuid init(Pair<Integer, Integer> nodePair) {
+  public synchronized static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
     if (initialized) {
+      LOG.warn("no need to initialize it again&again, the new node info won't take effect [current={}, new={}]",
+          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), nodeInfo);
       return INSTANCE;
     }
-    INSTANCE.datacenterId = nodePair.getLeft();
-    INSTANCE.workerId = nodePair.getRight();
+    // basic check
+    long datacenterId = nodeInfo.getLeft();
+    long workerId = nodeInfo.getRight();
+    long maxDatacenterId = INSTANCE.maxDatacenterId;
+    long maxWorkerId = INSTANCE.maxWorkerId;
+    Preconditions.checkArgument(datacenterId <= maxDatacenterId && datacenterId >= 0,
+        "datacenterId can't be greater than %s or less than 0", maxDatacenterId);
+    Preconditions.checkArgument(workerId <= maxWorkerId && workerId >= 0,
+        "workerId can't be greater than %s or less than 0", maxWorkerId);
+    // check passed, do initialize
+    INSTANCE.datacenterId = datacenterId;
+    INSTANCE.workerId = workerId;
     initialized = true;
     return INSTANCE;
   }
@@ -74,17 +87,9 @@ public final class LocalGuid {
   public static LocalGuid instance() {
     Preconditions.checkArgument(initialized, "must be initialized first");
     // TODO mj:instead of marking 'synchronized' on the whole,hope this way works
-    Preconditions.checkState(INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1, "being initialized");
+    Preconditions.checkState(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)),
+        "being initialized");
     return INSTANCE;
-  }
-
-  private LocalGuid(long datacenterId, long workerId) {
-    Preconditions.checkArgument(datacenterId <= maxDatacenterId && datacenterId >= 0,
-        "datacenter id can't be greater than %s or less than 0", maxDatacenterId);
-    Preconditions.checkArgument(workerId <= maxWorkerId && workerId >= 0,
-        "worker id can't be greater than %s or less than 0", maxWorkerId);
-    this.datacenterId = datacenterId;
-    this.workerId = workerId;
   }
 
   public static String uuid() {
@@ -156,4 +161,25 @@ public final class LocalGuid {
 
   private LocalGuid() {
   }
+
+  public long getDatacenterId() {
+    return datacenterId;
+  }
+
+  public long getWorkerId() {
+    return workerId;
+  }
+
+  // only for test purpose
+  // FIXME mj:building a cross-classload test instead
+  // ----------------------------------------------------------------
+  void reset() {
+    datacenterId = -1L;
+    workerId = -1L;
+    sequence = 0L;
+    lastTimestamp = -1L;
+    initialized = false;
+    gate = false;
+  }
+
 }
