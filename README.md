@@ -32,7 +32,9 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 
 As it is maven project, buidling is just a matter of executing the following in your console:
 
-	$ mvn clean package
+```shell
+  $ mvn clean package
+```
 
 This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
