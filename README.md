@@ -33,7 +33,7 @@ As it is maven project, buidling is just a matter of executing the following in 
 This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
 ## How to use
-### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \" process/node identity uniqueness \" by themselves)：
+### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \"process identity uniqueness\" by themselves)：
 
 ```
 //Step 1.Initialization (only once,usually when the application starts)
@@ -49,7 +49,7 @@ long id2 = LocalGuid.instance().next();
 
 ```
 
-### Method 2：Use in conjunction with distributed coordinator (recommend\*, \" process/node identity uniqueness \" automatically maintained)：
+### Method 2(recommend\*)：Use in conjunction with distributed coordinator (\"process identity uniqueness\" automatically maintained)：
 
 ```
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
@@ -60,14 +60,14 @@ LocalGuid guid = LocalGuid.init(node);
 
 
 ## Notes
-* This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (clock synchronization) to ensure overall correctness and availability
+* This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability
 * When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the [compatibility](http://curator.apache.org/zk-compatibility.html) between Curator and Zookeeper
 * The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
 * **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
 
 ## Roadmap
 * To support spring-boot
-* To support more distributed-coordinator e.g. **etcd**
+* To support more kinds of distributed-coordinator e.g. **etcd**
 * Try the best to solve the time-sensitive problem
 * To support ID semantic customization
 * TBD
