@@ -6,7 +6,7 @@
 
 | Stable Release Version | JDK Version compatibility | Release Date |
 | ------------- | ------------- | ------------|
-| 1.0.0  | 1.8+ | 02/24/2020 |
+| 1.0.1  | 1.8+ | 02/25/2020 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -24,7 +24,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
