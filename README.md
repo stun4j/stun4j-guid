@@ -37,7 +37,7 @@ This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
 ```
 //Step 1.Initialization (only once,usually when the application starts)
-/*DatacenterId and workerId are used to uniquely identify a process or node, 
+/*datacenterId and workerId are used to uniquely identify a process or node, 
 and the combination of the two must be 'unique'*/
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
