@@ -22,7 +22,11 @@
 在你工程的**pom.xml**中加入如下片段，即可从maven的中央仓库拉取：
 
 ```xml
-还在发布中...
+<dependency>
+  <groupId>com.stun4j</groupId>
+  <artifactId>stun4j-guid</artifactId>
+  <version>1.0.0</version>
+</dependency>
 ```
 
 

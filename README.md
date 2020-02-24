@@ -1,7 +1,7 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### Distributed global-unique-id generator, ultra fast, monotonic increasing, easy to use / [中文版](README_zh_CN.md) 
+### Global unique id generator, distributed, ultra fast, easy to use / [中文版](README_zh_CN.md) 
 
 
 | Stable Release Version | JDK Version compatibility | Release Date |
@@ -21,7 +21,11 @@
 Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull stun4j-guid from the central maven repository, just add these to your pom.xml file:
 
 ```xml
-coming soon...
+<dependency>
+  <groupId>com.stun4j</groupId>
+  <artifactId>stun4j-guid</artifactId>
+  <version>1.0.0</version>
+</dependency>
 ```
 
 ### Method 2: Building from the sources
