@@ -41,11 +41,11 @@ public final class Utils {
   private static final int NANOS_PER_MS = 1000 * 1000;
   private static final int NANOS_PER_SECONDS = 1000 * NANOS_PER_MS;
 
-  public static void sleepMs(int ms) {
+  public static void sleepMs(long ms) {
     LockSupport.parkNanos(ms * NANOS_PER_MS);
   }
 
-  public static void sleepSeconds(int seconds) {
+  public static void sleepSeconds(long seconds) {
     LockSupport.parkNanos(seconds * NANOS_PER_SECONDS);
   }
 

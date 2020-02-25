@@ -72,7 +72,7 @@ LocalGuid guid = LocalGuid.init(node);
 
 ## Roadmap
 * To support spring-boot
-* To support more kinds of distributed-coordinator e.g. **etcd**
+* To support more kinds of distributed-coordinator e.g. etcd
 * Try the best to solve the time-sensitive problem
 * To support ID semantic customization
 * TBD
