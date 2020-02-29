@@ -31,7 +31,7 @@ import com.stun4j.guid.utils.Utils;
  * Guid generator,without any remote-coordination
  * <p>
  * {@link #next()} based on twitter-snowflake algorithm<br>
- * {@link #uuid()} based on jdk {@link java.util.UUID} (without "-", lower-case)
+ * {@link #uuid()} based on jdk {@link java.util.UUID} (lower-case, without "-")
  * 
  * @author Jay Meng
  */
