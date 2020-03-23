@@ -9,7 +9,7 @@ import org.junit.Test;
 public class LocalGuidErrorTest {
 
   @Before
-  public void mockAFreshSingleton() {
+  public void mockReset() {
     try {
       LocalGuid.instance().reset();
     } catch (Exception e) {

@@ -16,6 +16,7 @@
  */
 package com.stun4j.guid;
 
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -64,7 +65,7 @@ public final class LocalGuid {
 
   public synchronized static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
     if (initialized) {
-      LOG.warn("no need to initialize it again&again, the new node info won't take effect [current={}, new={}]",
+      LOG.warn("no need to initialize it again&again, the incoming node info won't take effect [current={}, new={}]",
           Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), nodeInfo);
       return INSTANCE;
     }
@@ -85,8 +86,8 @@ public final class LocalGuid {
   }
 
   public static LocalGuid instance() {
-    Preconditions.checkArgument(initialized, "must be initialized first");
-    // TODO mj:instead of marking 'synchronized' on the whole,hope this way works
+    Preconditions.checkArgument(initialized, "must be initialized in the very begining");
+    // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
     Preconditions.checkState(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)),
         "being initialized");
     return INSTANCE;
@@ -141,11 +142,31 @@ public final class LocalGuid {
 
     lastTimestamp = timestamp;
 
-    return ((timestamp - epoch) << timestampLeftShift) //
+    return from(timestamp);
+  }
+
+  //convenience method->
+  public long from(Date dateTime) {
+    Preconditions.checkNotNull(dateTime, "datetime can't be null");
+    return from(dateTime.getTime());
+  }
+
+  public long from(long timeMs) {
+    return ((timeMs - epoch) << timestampLeftShift) //
         | (datacenterId << datacenterIdShift) //
         | (workerId << workerIdShift) //
         | sequence;
   }
+
+  public long getTimeMsFromId(long idExpectingSameEpoch) {
+    // assume the id is an unsigned num
+    String binStr = Long.toUnsignedString(idExpectingSameEpoch, 2);
+    binStr = Strings.leftPad(binStr, 64, "0");
+    String timeDeltaStr = binStr.substring(1, 42);
+    long back = Long.valueOf(timeDeltaStr, 2);
+    return back + this.epoch;
+  }
+  //<-
 
   private long casGetNextMs(long lastTimestamp) {
     long timestamp = currentTimeMs();

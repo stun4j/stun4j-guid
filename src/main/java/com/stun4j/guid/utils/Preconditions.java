@@ -14,7 +14,7 @@
 package com.stun4j.guid.utils;
 
 // from [com.google.guava/guava "28.2-jre"]
-/** @author Jay Meng roughly removed '@Nullable' */
+/** @author Jay Meng roughly removed '@com.google.common.base.Nullable' */
 public final class Preconditions {
   /**
    * Ensures the truth of an expression involving one or more parameters to the calling method.
@@ -97,6 +97,58 @@ public final class Preconditions {
     if (!b) {
       throw new IllegalStateException(Strings.lenientFormat(errorMessageTemplate, p1));
     }
+  }
+
+  /**
+   * Ensures that an object reference passed as a parameter to the calling method is not null.
+   *
+   * @param reference an object reference
+   * @return the non-null reference that was validated
+   * @throws NullPointerException if {@code reference} is null
+   */
+  public static <T> T checkNotNull(T reference) {
+    if (reference == null) {
+      throw new NullPointerException();
+    }
+    return reference;
+  }
+
+  /**
+   * Ensures that an object reference passed as a parameter to the calling method is not null.
+   *
+   * @param reference    an object reference
+   * @param errorMessage the exception message to use if the check fails; will be converted to a string using
+   *                     {@link String#valueOf(Object)}
+   * @return the non-null reference that was validated
+   * @throws NullPointerException if {@code reference} is null
+   */
+  public static <T> T checkNotNull(T reference, Object errorMessage) {
+    if (reference == null) {
+      throw new NullPointerException(String.valueOf(errorMessage));
+    }
+    return reference;
+  }
+
+  /**
+   * Ensures that an object reference passed as a parameter to the calling method is not null.
+   *
+   * @param reference            an object reference
+   * @param errorMessageTemplate a template for the exception message should the check fail. The message is formed by
+   *                             replacing each {@code %s} placeholder in the template with an argument. These are
+   *                             matched by position - the first {@code %s} gets {@code
+   *     errorMessageArgs[0]} , etc. Unmatched arguments will be appended to the formatted message in square braces.
+   *                             Unmatched placeholders will be left as-is.
+   * @param errorMessageArgs     the arguments to be substituted into the message template. Arguments are converted to
+   *                             strings using {@link String#valueOf(Object)}.
+   * @return the non-null reference that was validated
+   * @throws NullPointerException if {@code reference} is null
+   */
+  public static <T> T checkNotNull(T reference, String errorMessageTemplate, Object... errorMessageArgs) {
+    if (reference == null) {
+      // If either of these parameters is null, the right thing happens anyway
+      throw new NullPointerException(Strings.lenientFormat(errorMessageTemplate, errorMessageArgs));
+    }
+    return reference;
   }
 
   private Preconditions() {
