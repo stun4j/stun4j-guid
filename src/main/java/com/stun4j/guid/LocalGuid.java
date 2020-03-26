@@ -86,7 +86,7 @@ public final class LocalGuid {
   }
 
   public static LocalGuid instance() {
-    Preconditions.checkArgument(initialized, "must be initialized in the very begining");
+    Preconditions.checkArgument(initialized, "Local guid must be initialized in the very begining");
     // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
     Preconditions.checkState(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)),
         "being initialized");
