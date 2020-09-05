@@ -70,6 +70,7 @@ LocalGuid guid = LocalGuid.init(node);
 
 ## 路线图
 * 支持spring-boot
+* 支持更新的zk和curator版本
 * 支持更多分布式协调者 如etcd等
 * 尽可能克服时间敏感问题
 * 支持Id语义定制

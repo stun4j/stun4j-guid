@@ -21,11 +21,11 @@ public class LocalGuidErrorTest {
     long idBits = 5L;
     long maxId = -1L ^ (-1L << idBits);
     assertThat(maxId).isEqualTo(31);
-    String msg = "must be initialized first";
+    String initMsg = "Local guid must be initialized in the very begining";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.instance())
-        .withMessage("must be initialized first");
+        .withMessage(initMsg);
     // datacenterId range protect
-    msg = "datacenterId can't be greater than " + maxId + " or less than 0";
+    String msg = "datacenterId can't be greater than " + maxId + " or less than 0";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(-1, 0)).withMessage(msg);
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(32, 0)).withMessage(msg);
     // workerId range protect
@@ -35,7 +35,7 @@ public class LocalGuidErrorTest {
 
     // a safe post check
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.instance())
-        .withMessage("must be initialized first");
+        .withMessage(initMsg);
   }
   // FIXME mj:cross-classloader,multi-thread tests...
 }

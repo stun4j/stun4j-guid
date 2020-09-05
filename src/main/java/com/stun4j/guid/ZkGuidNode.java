@@ -172,6 +172,7 @@ public abstract class ZkGuidNode {
       CloseableUtils.closeQuietly(client);
       throw e;
     }
+    //TOOD mj:finally?
   }
 
   static {

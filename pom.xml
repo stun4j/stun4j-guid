@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.2.5.RELEASE</version>
+		<version>2.3.3.RELEASE</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.stun4j</groupId>
@@ -73,7 +73,7 @@
 		<maven-scm-provider-gitexe.version>1.9.5</maven-scm-provider-gitexe.version>
 		
 		<!-- test -->
-		<log4j2.version>2.13.0</log4j2.version>
+		<log4j2.version>2.13.3</log4j2.version>
 	</properties>
 
 	<dependencies>
@@ -140,7 +140,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>28.2-jre</version>
+			<version>29.0-jre</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
