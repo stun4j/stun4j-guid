@@ -19,6 +19,7 @@ package com.stun4j.guid.utils;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -34,10 +35,10 @@ import org.slf4j.LoggerFactory;
  */
 public final class NetworkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(NetworkUtils.class);
-  private static volatile InetAddress LOCAL_ADDRESS = null;
-  public static final String LOCALHOST = "127.0.0.1";
-  public static final String ANYHOST = "0.0.0.0";
   private static final Pattern IP_PATTERN = Pattern.compile("\\d{1,3}(\\.\\d{1,3}){3,5}$");
+  private static volatile InetAddress LOCAL_ADDRESS = null;
+  static final String NULL_SAFE_LOCALHOST = "127.0.0.1";
+  static final String ANYHOST = "0.0.0.0";
 
   public static String getLocalHost() {
     return getLocalHost(null);
@@ -45,7 +46,7 @@ public final class NetworkUtils {
 
   public static String getLocalHost(String ipStartith) {
     InetAddress address = getLocalAddress(ipStartith);
-    return address == null ? LOCALHOST : address.getHostAddress();
+    return address == null ? NULL_SAFE_LOCALHOST : address.getHostAddress();
   }
 
   public static InetAddress getLocalAddress() {
@@ -53,10 +54,11 @@ public final class NetworkUtils {
   }
 
   public static InetAddress getLocalAddress(String ipStartwith) {
-    if (LOCAL_ADDRESS != null)
+    if (LOCAL_ADDRESS != null && LOCAL_ADDRESS.getHostAddress().startsWith(Optional.ofNullable(ipStartwith).orElse("")))
       return LOCAL_ADDRESS;
     InetAddress localAddress = getLocalAddress0(ipStartwith);
-    LOCAL_ADDRESS = localAddress;
+    if (localAddress != null)
+      LOCAL_ADDRESS = localAddress;
     return localAddress;
   }
 
@@ -109,11 +111,12 @@ public final class NetworkUtils {
     return localAddr;
   }
 
-  private static boolean isValidAddress(InetAddress inetAddr) {
+  static boolean isValidAddress(InetAddress inetAddr) {
     if (inetAddr == null || inetAddr.isLoopbackAddress())
       return false;
     String name = inetAddr.getHostAddress();
-    return (name != null && !ANYHOST.equals(name) && !LOCALHOST.equals(name) && IP_PATTERN.matcher(name).matches());
+    return (name != null && !ANYHOST.equals(name) && !NULL_SAFE_LOCALHOST.equals(name)
+        && IP_PATTERN.matcher(name).matches());
   }
 
   private NetworkUtils() {
