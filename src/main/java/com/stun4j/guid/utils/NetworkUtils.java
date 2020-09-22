@@ -54,8 +54,9 @@ public final class NetworkUtils {
   }
 
   public static InetAddress getLocalAddress(String ipStartwith) {
-    if (LOCAL_ADDRESS != null && LOCAL_ADDRESS.getHostAddress().startsWith(Optional.ofNullable(ipStartwith).orElse("")))
-      return LOCAL_ADDRESS;
+    InetAddress work;
+    if ((work = LOCAL_ADDRESS) != null && work.getHostAddress().startsWith(Optional.ofNullable(ipStartwith).orElse("")))
+      return work;
     InetAddress localAddress = getLocalAddress0(ipStartwith);
     if (localAddress != null)
       LOCAL_ADDRESS = localAddress;

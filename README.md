@@ -6,7 +6,7 @@
 
 | Stable Release Version | JDK Version compatibility | Release Date |
 | ------------- | ------------- | ------------|
-| 1.0.3  | 1.8+ | 09/22/2020 |
+| 1.0.3.1  | 1.8+ | 09/22/2020 |
 | 1.0.2  | 1.8+ | 02/25/2020 |
 
 ## Feature
