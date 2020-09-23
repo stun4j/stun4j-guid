@@ -26,7 +26,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.3.1</version>
 </dependency>
 ```
 
