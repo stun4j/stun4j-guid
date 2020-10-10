@@ -105,9 +105,9 @@ public final class LocalGuid {
     return uuid(withHyphen, true);
   }
 
-  public static String uuid(boolean withHyphen, boolean untrafast) {
-    return withHyphen ? (untrafast ? INSTANCE.uuidFast.generate().toString() : UUID.randomUUID().toString())
-        : (untrafast ? INSTANCE.uuidFast.generate().toStringWithoutHyphen()
+  public static String uuid(boolean withHyphen, boolean ultrafast) {
+    return withHyphen ? (ultrafast ? INSTANCE.uuidFast.generate().toString() : UUID.randomUUID().toString())
+        : (ultrafast ? INSTANCE.uuidFast.generate().toStringWithoutHyphen()
             : UUID.randomUUID().toStringWithoutHyphen());
   }
 
