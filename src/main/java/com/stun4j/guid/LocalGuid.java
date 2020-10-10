@@ -16,13 +16,15 @@
  */
 package com.stun4j.guid;
 
+import java.security.SecureRandom;
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stun4j.guid.support.UUID;
+import com.stun4j.guid.support.UUIDFast;
 import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Preconditions;
 import com.stun4j.guid.utils.Strings;
@@ -59,6 +61,8 @@ public final class LocalGuid {
   private static boolean initialized = false;
   private static boolean gate = false;
 
+  private final UUIDFast uuidFast = new UUIDFast(new SecureRandom());
+
   public static LocalGuid init(int datacenterId, int workerId) {
     return init(Pair.of(datacenterId, workerId));
   }
@@ -94,7 +98,17 @@ public final class LocalGuid {
   }
 
   public static String uuid() {
-    return UUID.randomUUID().toString().replaceAll("-", "").toLowerCase();
+    return uuid(false, true);
+  }
+
+  public static String uuid(boolean withHyphen) {
+    return uuid(withHyphen, true);
+  }
+
+  public static String uuid(boolean withHyphen, boolean untrafast) {
+    return withHyphen ? (untrafast ? INSTANCE.uuidFast.generate().toString() : UUID.randomUUID().toString())
+        : (untrafast ? INSTANCE.uuidFast.generate().toStringWithoutHyphen()
+            : UUID.randomUUID().toStringWithoutHyphen());
   }
 
   public synchronized long next() {
@@ -145,7 +159,7 @@ public final class LocalGuid {
     return from(timestamp);
   }
 
-  //convenience method->
+  // convenience method->
   public long from(Date dateTime) {
     Preconditions.checkNotNull(dateTime, "datetime can't be null");
     return from(dateTime.getTime());
@@ -166,7 +180,7 @@ public final class LocalGuid {
     long back = Long.valueOf(timeDeltaStr, 2);
     return back + this.epoch;
   }
-  //<-
+  // <-
 
   private long casGetNextMs(long lastTimestamp) {
     long timestamp = currentTimeMs();

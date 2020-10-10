@@ -64,6 +64,7 @@ public abstract class ZkGuidNode {
 
   public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace, String ipStartWith)
       throws Exception {
+    //TODO mj:config
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000).retryPolicy(retryPolicy)
