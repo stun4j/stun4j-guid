@@ -5,11 +5,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.3.4.RELEASE</version>
+		<version>2.3.5.RELEASE</version>
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5-SNAPSHOT</version>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
@@ -74,6 +74,8 @@
 
 		<!-- test -->
 		<log4j2.version>2.13.3</log4j2.version>
+		<commons-lang3.version>3.11</commons-lang3.version>
+    <guava.version>30.0-jre</guava.version>
 	</properties>
 
 	<dependencies>
@@ -140,7 +142,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>29.0-jre</version>
+			<version>${guava.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

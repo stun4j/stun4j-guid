@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.0.3.1</version>
+  <version>1.0.4</version>
 </dependency>
 ```
 
@@ -71,7 +71,6 @@ LocalGuid guid = LocalGuid.init(node);
 * **再次重申：datacenterId和workerId结合起来被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的**
 
 ## 路线图
-* 支持spring-boot
 * 支持更新的zk和curator版本
 * 支持更多分布式协调者 如etcd等
 * 尽可能克服时间敏感问题

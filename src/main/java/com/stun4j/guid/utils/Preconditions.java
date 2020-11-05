@@ -15,6 +15,7 @@ package com.stun4j.guid.utils;
 
 // from [com.google.guava/guava "28.2-jre"]
 /** @author Jay Meng roughly removed '@com.google.common.base.Nullable' */
+@Deprecated
 public final class Preconditions {
   /**
    * Ensures the truth of an expression involving one or more parameters to the calling method.

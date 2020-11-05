@@ -26,7 +26,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.0.3.1</version>
+  <version>1.0.4</version>
 </dependency>
 ```
 
@@ -73,7 +73,6 @@ LocalGuid guid = LocalGuid.init(node);
 * **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
 
 ## Roadmap
-* To support spring-boot
 * To support latest zk&curator distribution
 * To support more kinds of distributed-coordinator e.g. etcd
 * Try the best to solve the time-sensitive problem
