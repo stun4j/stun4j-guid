@@ -61,6 +61,8 @@ public final class LocalGuid {
   private long sequence = 0L;
   private long lastTimestamp = -1L;
 
+  private int sequenceOffset = -1;
+
   private static final LocalGuid INSTANCE = new LocalGuid();
   private static boolean initialized = false;
   private static boolean gate = false;
@@ -146,7 +148,13 @@ public final class LocalGuid {
         timestamp = casGetNextMs(lastTimestamp);
       }
     } else {
-      sequence = 0L;
+      // sequence = 0L;
+
+      // a simple vibrate mechanism of guid generation,to improve the evenness of the distribution of odd and even
+      // numbers,under certain circumstances, i.e. db-sharding key,
+      // for more detail,also please check 'https://github.com/apache/shardingsphere /issues/1617'
+      vibrateSequenceOffset();
+      sequence = sequenceOffset;
     }
 
     lastTimestamp = timestamp;
@@ -204,6 +212,18 @@ public final class LocalGuid {
     this.workerId = workerId;
   }
 
+  private void vibrateSequenceOffset() {
+    sequenceOffset = sequenceOffset >= getMaxVibrationOffset() ? 0 : sequenceOffset + 1;
+  }
+
+  private int getMaxVibrationOffset() {
+    // int result = Integer
+    // .parseInt(properties.getProperty("max.vibration.offset", String.valueOf(DEFAULT_VIBRATION_VALUE)));
+    // argument(result >= 0 && result <= SEQUENCE_MASK, "Illegal max vibration offset");
+    // return result;//TODO mj:max.vibration->config
+    return 1;
+  }
+
   private LocalGuid() {
   }
 
@@ -230,12 +250,12 @@ public final class LocalGuid {
       return;
     }
 
-    //do reset
+    // do reset
     LOG.warn("datacenterId or workerId being changed [current={}, new={}]",
         lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
         lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
     doCoreInit(newNode);
-    //FIXME mj:wot if ex here? 
+    // FIXME mj:wot if ex here?
     LOG.info("Local guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
