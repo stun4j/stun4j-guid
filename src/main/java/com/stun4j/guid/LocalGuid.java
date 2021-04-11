@@ -16,6 +16,12 @@
  */
 package com.stun4j.guid;
 
+import static com.stun4j.guid.utils.Asserts.argument;
+import static com.stun4j.guid.utils.Asserts.notNull;
+import static com.stun4j.guid.utils.Asserts.state;
+import static com.stun4j.guid.utils.Strings.leftPad;
+import static com.stun4j.guid.utils.Strings.lenientFormat;
+
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
@@ -26,8 +32,6 @@ import org.slf4j.LoggerFactory;
 import com.stun4j.guid.support.UUID;
 import com.stun4j.guid.support.UUIDFast;
 import com.stun4j.guid.utils.Pair;
-import com.stun4j.guid.utils.Preconditions;
-import com.stun4j.guid.utils.Strings;
 import com.stun4j.guid.utils.Utils;
 
 /**
@@ -67,33 +71,24 @@ public final class LocalGuid {
     return init(Pair.of(datacenterId, workerId));
   }
 
-  public synchronized static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
+  public synchronized static LocalGuid init(Pair<Integer, Integer> node) {
     if (initialized) {
-      LOG.warn("no need to initialize it again&again, the incoming node info won't take effect [current={}, new={}]",
-          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), nodeInfo);
+      LOG.warn("no need to initialize it again&again, the incoming node-info won't take effect [current={}, new={}]",
+          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), node);
       return INSTANCE;
     }
-    // basic check
-    long datacenterId = nodeInfo.getLeft();
-    long workerId = nodeInfo.getRight();
-    long maxDatacenterId = INSTANCE.maxDatacenterId;
-    long maxWorkerId = INSTANCE.maxWorkerId;
-    Preconditions.checkArgument(datacenterId <= maxDatacenterId && datacenterId >= 0,
-        "datacenterId can't be greater than %s or less than 0", maxDatacenterId);
-    Preconditions.checkArgument(workerId <= maxWorkerId && workerId >= 0,
-        "workerId can't be greater than %s or less than 0", maxWorkerId);
-    // check passed, do initialize
-    INSTANCE.datacenterId = datacenterId;
-    INSTANCE.workerId = workerId;
+
+    INSTANCE.doCoreInit(node);
     initialized = true;
+    LOG.info("Local guid successfully initialized [datacenterId={}, workerId={}]", node.getLeft(), node.getRight());
     return INSTANCE;
   }
 
   public static LocalGuid instance() {
-    Preconditions.checkArgument(initialized, "Local guid must be initialized in the very begining");
+    argument(initialized, "Local guid must be initialized in the very begining");
     // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
-    Preconditions.checkState(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)),
-        "being initialized");
+    // TODO mj:provider patterns for user to choose,in reset/reconnect scenario
+    state(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)), "being initialized");
     return INSTANCE;
   }
 
@@ -118,7 +113,7 @@ public final class LocalGuid {
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
       if (timeLagMs >= 5000) {
-        String msg = Strings.lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
+        String msg = lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
             lastTimestamp - timestamp);
         LOG.error(msg);
         throw new RuntimeException(msg);
@@ -161,7 +156,7 @@ public final class LocalGuid {
 
   // convenience method->
   public long from(Date dateTime) {
-    Preconditions.checkNotNull(dateTime, "datetime can't be null");
+    notNull(dateTime, "datetime can't be null");
     return from(dateTime.getTime());
   }
 
@@ -175,7 +170,7 @@ public final class LocalGuid {
   public long getTimeMsFromId(long idExpectingSameEpoch) {
     // assume the id is an unsigned num
     String binStr = Long.toUnsignedString(idExpectingSameEpoch, 2);
-    binStr = Strings.leftPad(binStr, 64, "0");
+    binStr = leftPad(binStr, 64, "0");
     String timeDeltaStr = binStr.substring(1, 42);
     long back = Long.valueOf(timeDeltaStr, 2);
     return back + this.epoch;
@@ -194,6 +189,21 @@ public final class LocalGuid {
     return System.currentTimeMillis();
   }
 
+  private void doCoreInit(Pair<Integer, Integer> node) {
+    // basic check
+    long datacenterId = node.getLeft();
+    long workerId = node.getRight();
+    long maxDatacenterId = this.maxDatacenterId;
+    long maxWorkerId = this.maxWorkerId;
+    argument(datacenterId <= maxDatacenterId && datacenterId >= 0,
+        "datacenterId can't be greater than %s or less than 0", maxDatacenterId);
+    argument(workerId <= maxWorkerId && workerId >= 0, "workerId can't be greater than %s or less than 0", maxWorkerId);
+
+    // check passed, do initialize
+    this.datacenterId = datacenterId;
+    this.workerId = workerId;
+  }
+
   private LocalGuid() {
   }
 
@@ -203,6 +213,30 @@ public final class LocalGuid {
 
   public long getWorkerId() {
     return workerId;
+  }
+
+  // mainly for reconnect purpose
+  // ----------------------------------------------------------------
+  synchronized void reset(Pair<Integer, Integer> newNode) {
+    // compare and check
+    long curDatacenterIdId = INSTANCE.datacenterId;
+    long curWorkerId = INSTANCE.workerId;
+    long newDatacenterId = newNode.getLeft();
+    long newWorkerId = newNode.getRight();
+    if (curDatacenterIdId == newDatacenterId && curWorkerId == newWorkerId) {
+      LOG.info("neither the datacenterId nor the workerId has changed,Local guid reset ignored [current={}, new={}]",
+          lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
+          lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
+      return;
+    }
+
+    //do reset
+    LOG.warn("datacenterId or workerId being changed [current={}, new={}]",
+        lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
+        lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
+    doCoreInit(newNode);
+    //FIXME mj:wot if ex here? 
+    LOG.info("Local guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
   // only for test purpose

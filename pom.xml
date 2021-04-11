@@ -5,11 +5,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.3.5.RELEASE</version>
+		<version>2.4.4</version>
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.0.5-SNAPSHOT</version>
+	<version>1.1.0-SNAPSHOT</version>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
@@ -73,9 +73,9 @@
 		<maven-scm-provider-gitexe.version>1.9.5</maven-scm-provider-gitexe.version>
 
 		<!-- test -->
-		<log4j2.version>2.13.3</log4j2.version>
-		<commons-lang3.version>3.11</commons-lang3.version>
-    <guava.version>30.0-jre</guava.version>
+		<log4j2.version>2.14.1</log4j2.version>
+		<commons-lang3.version>3.12.0</commons-lang3.version>
+		<guava.version>30.1.1-jre</guava.version>
 	</properties>
 
 	<dependencies>
@@ -84,7 +84,8 @@
 			<groupId>org.apache.curator</groupId>
 			<artifactId>curator-recipes</artifactId>
 			<version>${curator.version}</version>
-			<scope>provided</scope>
+			<!-- <scope>provided</scope> -->
+			<optional>true</optional>
 		</dependency>
 
 		<!-- log -->
