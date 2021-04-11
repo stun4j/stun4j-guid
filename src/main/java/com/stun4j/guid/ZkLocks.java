@@ -24,7 +24,7 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.guid.utils.Preconditions;
+import static com.stun4j.guid.utils.Asserts.state;
 
 /**
  * A functional-style template for using zookeeper distributed-lock
@@ -48,7 +48,7 @@ public class ZkLocks<T> {
   }
 
   public T safeRun(long time, TimeUnit unit) throws Exception {
-    Preconditions.checkState(lock.acquire(time, unit), "%s could not acquire the lock", clientName);
+    state(lock.acquire(time, unit), "%s could not acquire the lock", clientName);
     try {
       LOG.debug("{} has the lock", clientName);
       return supplier.get();

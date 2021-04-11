@@ -16,7 +16,10 @@
  */
 package com.stun4j.guid;
 
+import static com.stun4j.guid.utils.Asserts.state;
+
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -24,14 +27,16 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.CuratorFrameworkFactory.Builder;
 import org.apache.curator.framework.api.ACLBackgroundPathAndBytesable;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
@@ -40,8 +45,8 @@ import org.slf4j.LoggerFactory;
 import com.stun4j.guid.utils.CloseableUtils;
 import com.stun4j.guid.utils.NetworkUtils;
 import com.stun4j.guid.utils.Pair;
-import com.stun4j.guid.utils.Preconditions;
 import com.stun4j.guid.utils.Strings;
+import com.stun4j.guid.utils.Utils;
 
 /** @author Jay Meng */
 public abstract class ZkGuidNode {
@@ -54,126 +59,211 @@ public abstract class ZkGuidNode {
   // TODO mj:registry abstraction extract,prevent curator coupling
   private static CuratorFramework client = null;
 
+  @Deprecated
   public static Pair<Integer, Integer> start(String zkConnectStr) throws Exception {
-    return start(zkConnectStr, null, null);
+    return start(zkConnectStr, null, null, null);
   }
 
+  @Deprecated
   public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace) throws Exception {
-    return start(zkConnectStr, zkNamespace, null);
+    return start(zkConnectStr, null, zkNamespace, null);
   }
 
+  @Deprecated
   public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace, String ipStartWith)
       throws Exception {
-    //TODO mj:config
+    return start(zkConnectStr, null, zkNamespace, ipStartWith);
+  }
+
+  @Deprecated
+  public static Pair<Integer, Integer> start(Builder zkClientBuilder, String ipStartWith) throws Exception {
+    return start(zkClientBuilder, null, ipStartWith);
+  }
+
+  public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect)
+      throws Exception {
+    return start(zkConnectStr, onReconnect, null, null);
+  }
+
+  public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
+      String zkNamespace) throws Exception {
+    return start(zkConnectStr, onReconnect, zkNamespace, null);
+  }
+
+  public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
+      String zkNamespace, String ipStartWith) throws Exception {
+    // TODO mj:config
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000).retryPolicy(retryPolicy)
         .namespace(Optional.ofNullable(zkNamespace).orElse(DFT_ZK_NAMESPACE_GUID));
-    return start(clientBuilder, ipStartWith);
+    return start(clientBuilder, onReconnect, ipStartWith);
   }
 
-  public static Pair<Integer, Integer> start(Builder zkClientBuilder, String ipStartWith) throws Exception {
-    Preconditions.checkState(STARTED.compareAndSet(false, true), "guid-node already started");
+  public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
+      String ipStartWith) throws Exception {
+    state(STARTED.compareAndSet(false, true), "guid-node already started");
     client = zkClientBuilder.build();
+    client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
+      @Override
+      public void stateChanged(CuratorFramework client, ConnectionState newSt) {
+        switch (newSt) {
+          case LOST:
+            // TODO mj:disable guid-generation?
+            break;
+          case SUSPENDED:
+            // TODO mj:nothing to do but log?
+            break;
+          case RECONNECTED:
+            if (onReconnect == null)
+              return;
+            try {
+              Pair<Integer, Integer> newNode = coreProcess(ipStartWith, client, true);
+              onReconnect.accept(newNode);
+            } catch (Throwable e) {
+              // FIXME mj:java.lang.IllegalStateException: /nodes/172.17.2.125@21439 could not acquire the lock
+              e.printStackTrace();// FIXME mj:wot's now...
+            }
+
+            break;
+          default:
+            break;
+        }
+      }
+    });
     try {
       client.start();
 
-      String processName = ManagementFactory.getRuntimeMXBean().getName();
-      String processId = processName.substring(0, processName.indexOf('@'));
-      String selfIp = NetworkUtils.getLocalHost(ipStartWith);
-      String selfNodePath = Strings.lenientFormat("%s/%s@%s", ZK_NODES_PATH_ROOT, selfIp, processId);
+      return coreProcess(ipStartWith, client, false);
 
-      // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely limited
-      return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
+    } catch (Throwable e) {
+      CloseableUtils.closeQuietly(client);
+      throw e;
+    }
+    // TOOD mj:finally?
+  }
+
+  private static Pair<Integer, Integer> coreProcess(String ipStartWith, CuratorFramework client, boolean isReconnect)
+      throws Exception {
+    String processName = ManagementFactory.getRuntimeMXBean().getName();
+    String processId = processName.substring(0, processName.indexOf('@'));
+    String selfIp = NetworkUtils.getLocalHost(ipStartWith);
+    String selfNodePath = Strings.lenientFormat("%s@%s", selfIp, processId);
+    String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
+
+    // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
+    // limited
+    return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
+      if (isReconnect) {
+        int processIdNum = Integer.parseInt(processId);
+        if (processIdNum % 2 == 0) {
+          // type-0 err:
+          if (true) {
+            throw new IllegalStateException("fuck");
+          }
+          // type-1 err:
+          // Utils.sleepSeconds(20);
+        }
+      }
+      try {
+        // building a full-snapshot of all the cluster members->
+        ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
+            .withMode(CreateMode.EPHEMERAL);
+        // a dbl-check between ip and zk auto-generated ip(data within an empty path)->
+        String flashCheckPath = "/" + LocalGuid.uuid();
         try {
-          // building a full-snapshot of all the cluster members->
-          ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
-              .withMode(CreateMode.EPHEMERAL);
-          // a dbl-check between ip and zk auto-generated ip(data within an empty path)->
-          String flashCheckPath = "/" + LocalGuid.uuid();
-          try {
-            dataWriter.forPath(flashCheckPath);
-            String ipByZkAutoGen = new String(client.getData().forPath(flashCheckPath));
-            if (!selfIp.equals(ipByZkAutoGen)) {
-              LOG.warn(
-                  "found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
-                  selfIp, ipByZkAutoGen);
-              // TODO mj:error handle strategy,consider throwing exception here
-            }
-          } finally {
-            client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
+          dataWriter.forPath(flashCheckPath);
+          String ipByZkAutoGen = new String(client.getData().forPath(flashCheckPath));
+          if (!selfIp.equals(ipByZkAutoGen)) {
+            LOG.warn(
+                "found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
+                selfIp, ipByZkAutoGen);
+            // TODO mj:error handle strategy,consider throwing exception here
+          }
+        } finally {
+          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
+        }
+        // <-
+
+        List<String> otherNodes;
+        try {
+          otherNodes = client.getChildren().forPath(ZK_NODES_PATH_ROOT);
+        } catch (NoNodeException e) {// this is reasonable,other exceptions not accepted
+          LOG.warn("might be the first initialization? [suspected err: {}]", e.getMessage());
+          otherNodes = new ArrayList<>();
+        }
+        state(otherNodes.size() < MAX_NUM_OF_WORKER_NODE, "number of worker-node over limited [max=%s]",
+            MAX_NUM_OF_WORKER_NODE);
+        TreeMap<String/* id */, String/* path(preserved, TODO mj:not used) */> nodeIdsIntSorted = new TreeMap<>(
+            Comparator.comparingInt((a) -> Integer.parseInt(a)));
+
+        int rtnNodeId = -1;
+        for (String otherNodePath : otherNodes) {
+          String data = new String(client.getData().forPath(ZK_NODES_PATH_ROOT + "/" + otherNodePath));
+          nodeIdsIntSorted.put(data, otherNodePath);
+
+          // try handling special reconnect scenario: node(process) itself still alive->
+          int curId = Integer.parseInt(data);
+          String lastNodePath = otherNodePath;
+          // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
+          // ->
+          if (selfNodePath.equals(lastNodePath)) {
+            LOG.info("guid-node is still alive, assuming no change [node-path={}, node-id={}]", lastNodePath, curId);
+            rtnNodeId = curId;
+            break;
           }
           // <-
+        }
+        // <-
 
-          List<String> otherNodes;
-          try {
-            otherNodes = client.getChildren().forPath(ZK_NODES_PATH_ROOT);
-          } catch (NoNodeException e) {// this is reasonable,other exceptions not accepted
-            LOG.warn("might be the first initialization? [suspected err: {}]", e.getMessage());
-            otherNodes = Lists.newArrayList();
-          }
-          Preconditions.checkState(otherNodes.size() < MAX_NUM_OF_WORKER_NODE,
-              "number of worker-node over limited [max=%s]", MAX_NUM_OF_WORKER_NODE);
-          TreeMap<String/* id */, String/* path(preserved, TODO mj:not used) */> nodeIdsIntSorted = new TreeMap<>(
-              Comparator.comparingInt((a) -> Integer.parseInt(a)));
-          for (String otherNodePath : otherNodes) {
-            String data = new String(client.getData().forPath(ZK_NODES_PATH_ROOT + "/" + otherNodePath));
-            nodeIdsIntSorted.put(data, otherNodePath);
-          }
-          // <-
-
-          // try generating node-id
-          int rtnNodeId = -1;
-          if (nodeIdsIntSorted.isEmpty()) {
-            // during the coordination(zk-side),guid-node-id begin with 1
-            String newNodeId = "1";
-            dataWriter.forPath(selfNodePath, newNodeId.getBytes());
-            rtnNodeId = Integer.parseInt(newNodeId);
-          } else {
+        // try generating node-id
+        if (nodeIdsIntSorted.isEmpty()) {
+          // during the coordination(zk-side),guid-node-id begin with 1
+          String newNodeId = "1";
+          dataWriter.forPath(selfNodeFullPath, newNodeId.getBytes());
+          rtnNodeId = Integer.parseInt(newNodeId);
+        } else {
+          if (rtnNodeId < 0) {// 'rtnNodeId<0' indicates that the node(process) itself has vanished(in zk)
             Entry<String, String> lastEntry = null;
             for (Entry<String, String> entry : nodeIdsIntSorted.entrySet()) {
               int curId = Integer.parseInt(entry.getKey());
+
               int lastId = lastEntry != null ? Integer.parseInt(lastEntry.getKey()) : 0;
               // find a gap,node can be safely inserted
               if (curId > lastId + 1) {
                 String newNodeId = String.valueOf(curId - 1);
-                dataWriter.forPath(selfNodePath, newNodeId.getBytes());
+                dataWriter.forPath(selfNodeFullPath, newNodeId.getBytes());
                 rtnNodeId = Integer.parseInt(newNodeId);
                 break;
               }
               lastEntry = entry;
             }
-            // if nothing matched,a simply increment occurred
-            if (rtnNodeId < 0) {
-              String maxId = nodeIdsIntSorted.lastKey();
-              int newId = Integer.parseInt(maxId) + 1;
-              dataWriter.forPath(selfNodePath, String.valueOf(newId).getBytes());
-              rtnNodeId = newId;
-            }
           }
-          Preconditions.checkState(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE,
-              "wrong guid-node-id [nodeId=%s]", rtnNodeId);
-          /*
-           * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works
-           * wrong
-           */
-          String binStr = Strings.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
-          String lowAsDatacenterId = binStr.substring(0, 5);
-          String highAsWorkerId = binStr.substring(5, 10);
-          Integer datacenterId = Integer.valueOf(lowAsDatacenterId, 2);
-          Integer workerId = Integer.valueOf(highAsWorkerId, 2);
-          LOG.info("guid-node started [datacenterId={}, workerId={}]", datacenterId, workerId);
-          return Pair.of(datacenterId, workerId);
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }, selfNodePath).safeRun(15, TimeUnit.SECONDS);
 
-    } catch (Exception e) {
-      CloseableUtils.closeQuietly(client);
-      throw e;
-    }
-    //TOOD mj:finally?
+          // if nothing matched,a simply increment occurred
+          if (rtnNodeId < 0) {
+            String maxId = nodeIdsIntSorted.lastKey();
+            int newId = Integer.parseInt(maxId) + 1;
+            dataWriter.forPath(selfNodeFullPath, String.valueOf(newId).getBytes());
+            rtnNodeId = newId;
+          }
+        }
+        state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "wrong guid-node-id [nodeId=%s]", rtnNodeId);
+        /*
+         * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works wrong
+         */
+        String binStr = Strings.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
+        String lowAsDatacenterId = binStr.substring(0, 5);
+        String highAsWorkerId = binStr.substring(5, 10);
+        Integer datacenterId = Integer.valueOf(lowAsDatacenterId, 2);
+        Integer workerId = Integer.valueOf(highAsWorkerId, 2);
+        LOG.info("guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !isReconnect ? "" : "re",
+            datacenterId, workerId, selfNodePath);
+        return Pair.of(datacenterId, workerId);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }, selfNodeFullPath).safeRun(15, TimeUnit.SECONDS);
   }
 
   static {
