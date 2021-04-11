@@ -114,7 +114,7 @@ public final class LocalGuid {
     // handle time clock backwards(coz NTP is not safe)
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
-      if (timeLagMs >= 5000) {
+      if (timeLagMs >= 5000) {//TODO mj:5000->config
         String msg = lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
             lastTimestamp - timestamp);
         LOG.error(msg);

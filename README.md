@@ -60,8 +60,7 @@ long id2 = LocalGuid.instance().next();
 
 ```
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
-Pair<Integer, Integer> node = ZkGuidNode.start("localhost:2181"/*zk address*/);
-LocalGuid guid = LocalGuid.init(node);
+LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
 //Step 2.Get the id(same as above, omitted)
 ```
 
