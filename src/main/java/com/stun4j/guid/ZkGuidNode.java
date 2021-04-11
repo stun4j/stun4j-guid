@@ -58,6 +58,8 @@ public abstract class ZkGuidNode {
   private static final AtomicBoolean STARTED = new AtomicBoolean(false);
   // TODO mj:registry abstraction extract,prevent curator coupling
   private static CuratorFramework client = null;
+  
+  private static int reconnectRetryTimes = 0;
 
   @Deprecated
   public static Pair<Integer, Integer> start(String zkConnectStr) throws Exception {
@@ -100,6 +102,8 @@ public abstract class ZkGuidNode {
     return start(clientBuilder, onReconnect, ipStartWith);
   }
 
+  // private static final AtomicInteger reconnectEpoch = new AtomicInteger(0);
+  // private static final AtomicInteger reconnectRetryTimes = new AtomicInteger(0);
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
       String ipStartWith) throws Exception {
     state(STARTED.compareAndSet(false, true), "guid-node already started");
@@ -109,20 +113,37 @@ public abstract class ZkGuidNode {
       public void stateChanged(CuratorFramework client, ConnectionState newSt) {
         switch (newSt) {
           case LOST:
-            // TODO mj:disable guid-generation?
+            // TODO mj:disable guid-generation? behavior->config
             break;
           case SUSPENDED:
-            // TODO mj:nothing to do but log?
+            // TODO mj:nothing to do?
             break;
-          case RECONNECTED:
+          case RECONNECTED:// TODO mj:reconnect behavior appears to be 'serial(concurrency level)', even at different
+                           // epochs
+            // TODO mj:are queued reconnects of different epochs?or we just don't care...
             if (onReconnect == null)
               return;
-            try {
-              Pair<Integer, Integer> newNode = coreProcess(ipStartWith, client, true);
-              onReconnect.accept(newNode);
-            } catch (Throwable e) {
-              // FIXME mj:java.lang.IllegalStateException: /nodes/172.17.2.125@21439 could not acquire the lock
-              e.printStackTrace();// FIXME mj:wot's now...
+            // int savedEpoch = reconnectEpoch.incrementAndGet();
+            while (true) {
+              // LOG.info("savedEpoch:{}, currentEpoch:{}", savedEpoch, reconnectEpoch);
+              // if (savedEpoch != reconnectEpoch.get()) {
+              // //cancel current reconnect,coz found new, this seems to be unnecessary...for the 'serial(concurrency
+              // level)' epoch behavior
+              // break;
+              // }
+              if (reconnectRetryTimes >= 60) {// TODO mj:maxRetryTimes->config
+                reconnectRetryTimes = 0;// TODO mj:behavior->config
+              }
+              try {
+                Pair<Integer, Integer> newNode = coreProcess(ipStartWith, client, true);
+                onReconnect.accept(newNode);
+                break;
+              } catch (Throwable e) {
+                LOG.error(
+                    "Local guid can't reconnect with the ZK, which greatly increases the risk of GUID duplication |error: '{}'",
+                    e.getMessage(), e);
+                Utils.sleepSeconds(reconnectRetryTimes++ % 11);// a simple 'step' sleep time TODO mj:11->config
+              }
             }
 
             break;
@@ -154,17 +175,6 @@ public abstract class ZkGuidNode {
     // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
     // limited
     return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
-      if (isReconnect) {
-        int processIdNum = Integer.parseInt(processId);
-        if (processIdNum % 2 == 0) {
-          // type-0 err:
-          if (true) {
-            throw new IllegalStateException("fuck");
-          }
-          // type-1 err:
-          // Utils.sleepSeconds(20);
-        }
-      }
       try {
         // building a full-snapshot of all the cluster members->
         ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
