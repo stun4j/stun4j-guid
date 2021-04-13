@@ -58,26 +58,26 @@ public abstract class ZkGuidNode {
   private static final AtomicBoolean STARTED = new AtomicBoolean(false);
   // TODO mj:registry abstraction extract,prevent curator coupling
   private static CuratorFramework client = null;
-  
+
   private static int reconnectRetryTimes = 0;
 
-  @Deprecated
+  @Deprecated // deprecated in 1.1.0
   public static Pair<Integer, Integer> start(String zkConnectStr) throws Exception {
     return start(zkConnectStr, null, null, null);
   }
 
-  @Deprecated
+  @Deprecated // deprecated in 1.1.0
   public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace) throws Exception {
     return start(zkConnectStr, null, zkNamespace, null);
   }
 
-  @Deprecated
+  @Deprecated // deprecated in 1.1.0
   public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace, String ipStartWith)
       throws Exception {
     return start(zkConnectStr, null, zkNamespace, ipStartWith);
   }
 
-  @Deprecated
+  @Deprecated // deprecated in 1.1.0
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, String ipStartWith) throws Exception {
     return start(zkClientBuilder, null, ipStartWith);
   }
@@ -118,8 +118,8 @@ public abstract class ZkGuidNode {
           case SUSPENDED:
             // TODO mj:nothing to do?
             break;
-          case RECONNECTED:// TODO mj:reconnect behavior appears to be 'serial(concurrency level)', even at different
-                           // epochs
+          case RECONNECTED:
+            // TODO mj:reconnect behavior appears to be 'serial(concurrency level)', even at different epochs
             // TODO mj:are queued reconnects of different epochs?or we just don't care...
             if (onReconnect == null)
               return;
@@ -171,29 +171,29 @@ public abstract class ZkGuidNode {
     String selfIp = NetworkUtils.getLocalHost(ipStartWith);
     String selfNodePath = Strings.lenientFormat("%s@%s", selfIp, processId);
     String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
+    
+    // building a full-snapshot of all the cluster members->
+    ACLBackgroundPathAndBytesable<String> flashWriter = client.create().creatingParentsIfNeeded()
+        .withMode(CreateMode.EPHEMERAL);
+    // a dbl-check between ip and zk auto-generated ip(data within an empty path)->
+    String flashCheckPath = "/" + LocalGuid.uuid();
+    try {
+      flashWriter.forPath(flashCheckPath);
+      String ipByZkAutoGen = new String(client.getData().forPath(flashCheckPath));
+      if (!selfIp.equals(ipByZkAutoGen)) {
+        LOG.warn(
+            "found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
+            selfIp, ipByZkAutoGen);
+        // TODO mj:error handle strategy,consider throwing exception here
+      }
+    } finally {
+      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
+    }
 
     // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
     // limited
     return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
       try {
-        // building a full-snapshot of all the cluster members->
-        ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
-            .withMode(CreateMode.EPHEMERAL);
-        // a dbl-check between ip and zk auto-generated ip(data within an empty path)->
-        String flashCheckPath = "/" + LocalGuid.uuid();
-        try {
-          dataWriter.forPath(flashCheckPath);
-          String ipByZkAutoGen = new String(client.getData().forPath(flashCheckPath));
-          if (!selfIp.equals(ipByZkAutoGen)) {
-            LOG.warn(
-                "found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
-                selfIp, ipByZkAutoGen);
-            // TODO mj:error handle strategy,consider throwing exception here
-          }
-        } finally {
-          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
-        }
-        // <-
 
         List<String> otherNodes;
         try {
@@ -204,60 +204,33 @@ public abstract class ZkGuidNode {
         }
         state(otherNodes.size() < MAX_NUM_OF_WORKER_NODE, "number of worker-node over limited [max=%s]",
             MAX_NUM_OF_WORKER_NODE);
-        TreeMap<String/* id */, String/* path(preserved, TODO mj:not used) */> nodeIdsIntSorted = new TreeMap<>(
-            Comparator.comparingInt((a) -> Integer.parseInt(a)));
 
         int rtnNodeId = -1;
-        for (String otherNodePath : otherNodes) {
-          String data = new String(client.getData().forPath(ZK_NODES_PATH_ROOT + "/" + otherNodePath));
-          nodeIdsIntSorted.put(data, otherNodePath);
-
-          // try handling special reconnect scenario: node(process) itself still alive->
-          int curId = Integer.parseInt(data);
-          String lastNodePath = otherNodePath;
-          // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
-          // ->
-          if (selfNodePath.equals(lastNodePath)) {
-            LOG.info("guid-node is still alive, assuming no change [node-path={}, node-id={}]", lastNodePath, curId);
-            rtnNodeId = curId;
-            break;
-          }
-          // <-
-        }
+        // for (String otherNodePath : otherNodes) {
+        // String data = new String(client.getData().forPath(ZK_NODES_PATH_ROOT + "/" + otherNodePath));
+        // nodeIdsIntSorted.put(data, otherNodePath);
+        //
+        // // try handling special reconnect scenario: node(process) itself still alive->
+        // int curId = Integer.parseInt(data);
+        // String lastNodePath = otherNodePath;
+        // // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
+        // // ->
+        // if (selfNodePath.equals(lastNodePath)) {
+        // LOG.info("guid-node is still alive, assuming no change [node-path={}, node-id={}]", lastNodePath, curId);
+        // rtnNodeId = curId;
+        // break;
+        // }
+        // // <-
+        // }
         // <-
 
-        // try generating node-id
-        if (nodeIdsIntSorted.isEmpty()) {
-          // during the coordination(zk-side),guid-node-id begin with 1
-          String newNodeId = "1";
-          dataWriter.forPath(selfNodeFullPath, newNodeId.getBytes());
-          rtnNodeId = Integer.parseInt(newNodeId);
-        } else {
-          if (rtnNodeId < 0) {// 'rtnNodeId<0' indicates that the node(process) itself has vanished(in zk)
-            Entry<String, String> lastEntry = null;
-            for (Entry<String, String> entry : nodeIdsIntSorted.entrySet()) {
-              int curId = Integer.parseInt(entry.getKey());
+        // switch to 'sequential' mode,safely allocate nodes
+        ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
+        
+        String realPath = dataWriter.forPath(selfNodeFullPath, null);
+        String last4 = realPath.substring(realPath.length() - 4);
+        rtnNodeId = Integer.parseInt(last4) % MAX_NUM_OF_WORKER_NODE + 1;
 
-              int lastId = lastEntry != null ? Integer.parseInt(lastEntry.getKey()) : 0;
-              // find a gap,node can be safely inserted
-              if (curId > lastId + 1) {
-                String newNodeId = String.valueOf(curId - 1);
-                dataWriter.forPath(selfNodeFullPath, newNodeId.getBytes());
-                rtnNodeId = Integer.parseInt(newNodeId);
-                break;
-              }
-              lastEntry = entry;
-            }
-          }
-
-          // if nothing matched,a simply increment occurred
-          if (rtnNodeId < 0) {
-            String maxId = nodeIdsIntSorted.lastKey();
-            int newId = Integer.parseInt(maxId) + 1;
-            dataWriter.forPath(selfNodeFullPath, String.valueOf(newId).getBytes());
-            rtnNodeId = newId;
-          }
-        }
         state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "wrong guid-node-id [nodeId=%s]", rtnNodeId);
         /*
          * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works wrong
