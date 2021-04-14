@@ -20,11 +20,8 @@ import static com.stun4j.guid.utils.Asserts.state;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -161,7 +158,6 @@ public abstract class ZkGuidNode {
       CloseableUtils.closeQuietly(client);
       throw e;
     }
-    // TOOD mj:finally?
   }
 
   private static Pair<Integer, Integer> coreProcess(String ipStartWith, CuratorFramework client, boolean isReconnect)
@@ -169,13 +165,13 @@ public abstract class ZkGuidNode {
     String processName = ManagementFactory.getRuntimeMXBean().getName();
     String processId = processName.substring(0, processName.indexOf('@'));
     String selfIp = NetworkUtils.getLocalHost(ipStartWith);
-    String selfNodePath = Strings.lenientFormat("%s@%s", selfIp, processId);
+    String selfNodePath = Strings.lenientFormat("%s@%s#", selfIp, processId);
     String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
-    
+
     // building a full-snapshot of all the cluster members->
     ACLBackgroundPathAndBytesable<String> flashWriter = client.create().creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL);
-    // a dbl-check between ip and zk auto-generated ip(data within an empty path)->
+    // a dbl-check between ip and zk auto-generated ip(data within an empty path)
     String flashCheckPath = "/" + LocalGuid.uuid();
     try {
       flashWriter.forPath(flashCheckPath);
@@ -206,30 +202,27 @@ public abstract class ZkGuidNode {
             MAX_NUM_OF_WORKER_NODE);
 
         int rtnNodeId = -1;
-        // for (String otherNodePath : otherNodes) {
-        // String data = new String(client.getData().forPath(ZK_NODES_PATH_ROOT + "/" + otherNodePath));
-        // nodeIdsIntSorted.put(data, otherNodePath);
-        //
-        // // try handling special reconnect scenario: node(process) itself still alive->
-        // int curId = Integer.parseInt(data);
-        // String lastNodePath = otherNodePath;
-        // // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
-        // // ->
-        // if (selfNodePath.equals(lastNodePath)) {
-        // LOG.info("guid-node is still alive, assuming no change [node-path={}, node-id={}]", lastNodePath, curId);
-        // rtnNodeId = curId;
-        // break;
-        // }
-        // // <-
-        // }
+        // try handling special reconnect scenario: node(process) itself still alive->
+        for (String otherNodePath : otherNodes) {
+          // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
+          // System.out.println(otherNodePath);
+          // System.out.println(selfNodePath);
+          if (otherNodePath.startsWith(selfNodePath)) {
+            LOG.info("guid-node is still alive, assuming no change [node-real-path={}]", otherNodePath);
+            rtnNodeId = calculateNodeIdFrom(otherNodePath);
+            break;
+          }
+        }
         // <-
 
-        // switch to 'sequential' mode,safely allocate nodes
-        ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
-        
-        String realPath = dataWriter.forPath(selfNodeFullPath, null);
-        String last4 = realPath.substring(realPath.length() - 4);
-        rtnNodeId = Integer.parseInt(last4) % MAX_NUM_OF_WORKER_NODE + 1;
+        if (rtnNodeId < 0) {
+          // switch to 'sequential' mode,safely allocate nodes
+          ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
+              .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
+
+          String realPath = dataWriter.forPath(selfNodeFullPath, null);
+          rtnNodeId = calculateNodeIdFrom(realPath);
+        }
 
         state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "wrong guid-node-id [nodeId=%s]", rtnNodeId);
         /*
@@ -247,6 +240,12 @@ public abstract class ZkGuidNode {
         throw new RuntimeException(e);
       }
     }, selfNodeFullPath).safeRun(15, TimeUnit.SECONDS);
+  }
+
+  static int calculateNodeIdFrom(String realNodePath) {
+    String last4 = realNodePath.substring(realNodePath.length() - 4);
+    int rtnNodeId = Integer.parseInt(last4) % MAX_NUM_OF_WORKER_NODE + 1;
+    return rtnNodeId;
   }
 
   static {
