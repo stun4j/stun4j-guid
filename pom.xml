@@ -62,8 +62,7 @@
 		<!-- zk -->
 		<curator.version>2.13.0</curator.version>
 		<!-- zk server 3.5+ only -->
-		<!-- <curator.version>3.3.0</curator.version> -->
-		<!-- <curator.version>4.2.0</curator.version> -->
+		<!-- <curator.version>3.3.0+</curator.version> -->
 		<!-- /zk server 3.5+ only -->
 
 		<!-- maven-release -->
