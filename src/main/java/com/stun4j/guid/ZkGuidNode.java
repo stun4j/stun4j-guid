@@ -40,10 +40,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.stun4j.guid.utils.CloseableUtils;
+import com.stun4j.guid.utils.Execptions;
 import com.stun4j.guid.utils.NetworkUtils;
 import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Strings;
 import com.stun4j.guid.utils.Utils;
+import static com.stun4j.guid.utils.Execptions.sneakyThrow;
 
 /** @author Jay Meng */
 public abstract class ZkGuidNode {
@@ -137,7 +139,7 @@ public abstract class ZkGuidNode {
                 break;
               } catch (Throwable e) {
                 LOG.error(
-                    "Local guid can't reconnect with the ZK, which greatly increases the risk of GUID duplication |error: '{}'",
+                    "local-guid can't reconnect with zookeeper, which greatly increases the risk of guid-duplication |error: '{}'",
                     e.getMessage(), e);
                 Utils.sleepSeconds(reconnectRetryTimes++ % 11);// a simple 'step' sleep time TODO mj:11->config
               }
@@ -168,7 +170,6 @@ public abstract class ZkGuidNode {
     String selfNodePath = Strings.lenientFormat("%s@%s#", selfIp, processId);
     String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
 
-    // building a full-snapshot of all the cluster members->
     ACLBackgroundPathAndBytesable<String> flashWriter = client.create().creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL);
     // a dbl-check between ip and zk auto-generated ip(data within an empty path)
@@ -186,44 +187,26 @@ public abstract class ZkGuidNode {
       client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
     }
 
-    // use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
-    // limited
+    /*
+     * use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
+     * limited
+     */
     return ZkLocks.of(client, ZK_LOCK_PATH_ROOT, () -> {
       try {
-
-        List<String> otherNodes;
+        List<String> snapshotAllNodes;
         try {
-          otherNodes = client.getChildren().forPath(ZK_NODES_PATH_ROOT);
+          snapshotAllNodes = client.getChildren().forPath(ZK_NODES_PATH_ROOT);
         } catch (NoNodeException e) {// this is reasonable,other exceptions not accepted
           LOG.warn("might be the first initialization? [suspected err: {}]", e.getMessage());
-          otherNodes = new ArrayList<>();
+          snapshotAllNodes = new ArrayList<>();
         }
-        state(otherNodes.size() < MAX_NUM_OF_WORKER_NODE, "number of worker-node over limited [max=%s]",
+        state(snapshotAllNodes.size() < MAX_NUM_OF_WORKER_NODE, "number of worker-node over limited [max=%s]",
             MAX_NUM_OF_WORKER_NODE);
 
-        int rtnNodeId = -1;
-        // try handling special reconnect scenario: node(process) itself still alive->
-        for (String otherNodePath : otherNodes) {
-          // in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
-          // System.out.println(otherNodePath);
-          // System.out.println(selfNodePath);
-          if (otherNodePath.startsWith(selfNodePath)) {
-            LOG.info("guid-node is still alive, assuming no change [node-real-path={}]", otherNodePath);
-            rtnNodeId = calculateNodeIdFrom(otherNodePath);
-            break;
-          }
-        }
-        // <-
-
-        if (rtnNodeId < 0) {
-          // switch to 'sequential' mode,safely allocate nodes
-          ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
-              .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
-
-          String realPath = dataWriter.forPath(selfNodeFullPath, null);
-          rtnNodeId = calculateNodeIdFrom(realPath);
-        }
-
+        ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
+            .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
+        String realNodeFullPath = dataWriter.forPath(selfNodeFullPath, null);
+        int rtnNodeId = calculateNodeIdFrom(realNodeFullPath);
         state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "wrong guid-node-id [nodeId=%s]", rtnNodeId);
         /*
          * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works wrong
@@ -234,10 +217,31 @@ public abstract class ZkGuidNode {
         Integer datacenterId = Integer.valueOf(lowAsDatacenterId, 2);
         Integer workerId = Integer.valueOf(highAsWorkerId, 2);
         LOG.info("guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !isReconnect ? "" : "re",
-            datacenterId, workerId, selfNodePath);
+            datacenterId, workerId, realNodeFullPath);
+
+        /*
+         * in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss', so
+         * for the purpose, more efficient use of '1024-limit',we need to remove the old path ->
+         */
+        String nodeOldFullPath = null;
+        String msgTpl = null;
+        try {
+          for (String nodeOldPath : snapshotAllNodes) {
+            if (nodeOldPath.startsWith(selfNodePath)) {
+              LOG.warn(msgTpl = "guid-node is still alive, the old path '{}' would be replaced with the new path '{}'",
+                  nodeOldFullPath = ZK_NODES_PATH_ROOT + "/" + nodeOldPath, realNodeFullPath);
+              client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldFullPath);
+              break;
+            }
+          }
+        } catch (Throwable e) {
+          // swallow any exception of 'old-path-deletion' to guarantee the core/main process
+          LOG.warn(msgTpl, nodeOldFullPath, realNodeFullPath);
+        }
+
         return Pair.of(datacenterId, workerId);
-      } catch (Throwable e) {
-        throw new RuntimeException(e);
+      } catch (Throwable t) {
+        throw sneakyThrow(t);
       }
     }, selfNodeFullPath).safeRun(15, TimeUnit.SECONDS);
   }

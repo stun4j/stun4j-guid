@@ -73,21 +73,21 @@ public final class LocalGuid {
     return init(Pair.of(datacenterId, workerId));
   }
 
-  public synchronized static LocalGuid init(Pair<Integer, Integer> node) {
+  public synchronized static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
     if (initialized) {
       LOG.warn("no need to initialize it again&again, the incoming node-info won't take effect [current={}, new={}]",
-          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), node);
+          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), nodeInfo);
       return INSTANCE;
     }
 
-    INSTANCE.doCoreInit(node);
+    INSTANCE.doCoreInit(nodeInfo);
     initialized = true;
-    LOG.info("Local guid successfully initialized [datacenterId={}, workerId={}]", node.getLeft(), node.getRight());
+    LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", nodeInfo.getLeft(), nodeInfo.getRight());
     return INSTANCE;
   }
 
   public static LocalGuid instance() {
-    argument(initialized, "Local guid must be initialized in the very begining");
+    argument(initialized, "local-guid must be initialized in the very begining");
     // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
     // TODO mj:provider patterns for user to choose,in reset/reconnect scenario
     state(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)), "being initialized");
@@ -114,7 +114,7 @@ public final class LocalGuid {
     // handle time clock backwards(coz NTP is not safe)
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
-      if (timeLagMs >= 5000) {//TODO mj:5000->config
+      if (timeLagMs >= 5000) {// TODO mj:5000->config
         String msg = lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
             lastTimestamp - timestamp);
         LOG.error(msg);
@@ -197,10 +197,10 @@ public final class LocalGuid {
     return System.currentTimeMillis();
   }
 
-  private void doCoreInit(Pair<Integer, Integer> node) {
+  private void doCoreInit(Pair<Integer, Integer> nodeInfo) {
     // basic check
-    long datacenterId = node.getLeft();
-    long workerId = node.getRight();
+    long datacenterId = nodeInfo.getLeft();
+    long workerId = nodeInfo.getRight();
     long maxDatacenterId = this.maxDatacenterId;
     long maxWorkerId = this.maxWorkerId;
     argument(datacenterId <= maxDatacenterId && datacenterId >= 0,
@@ -237,14 +237,14 @@ public final class LocalGuid {
 
   // mainly for reconnect purpose
   // ----------------------------------------------------------------
-  synchronized void reset(Pair<Integer, Integer> newNode) {
+  synchronized void reset(Pair<Integer, Integer> newNodeInfo) {
     // compare and check
     long curDatacenterIdId = INSTANCE.datacenterId;
     long curWorkerId = INSTANCE.workerId;
-    long newDatacenterId = newNode.getLeft();
-    long newWorkerId = newNode.getRight();
+    long newDatacenterId = newNodeInfo.getLeft();
+    long newWorkerId = newNodeInfo.getRight();
     if (curDatacenterIdId == newDatacenterId && curWorkerId == newWorkerId) {
-      LOG.info("neither the datacenterId nor the workerId has changed,Local guid reset ignored [current={}, new={}]",
+      LOG.info("neither the datacenterId nor the workerId has changed,local-guid reset ignored [current={}, new={}]",
           lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
           lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
       return;
@@ -254,9 +254,8 @@ public final class LocalGuid {
     LOG.warn("datacenterId or workerId being changed [current={}, new={}]",
         lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
         lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
-    doCoreInit(newNode);
-    // FIXME mj:wot if ex here?
-    LOG.info("Local guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
+    doCoreInit(newNodeInfo);
+    LOG.info("local-guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
   // only for test purpose

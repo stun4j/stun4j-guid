@@ -21,7 +21,7 @@ public class LocalGuidErrorTest {
     long idBits = 5L;
     long maxId = -1L ^ (-1L << idBits);
     assertThat(maxId).isEqualTo(31);
-    String initMsg = "Local guid must be initialized in the very begining";
+    String initMsg = "local-guid must be initialized in the very begining";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.instance())
         .withMessage(initMsg);
     // datacenterId range protect
