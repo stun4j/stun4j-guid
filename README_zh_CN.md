@@ -6,9 +6,9 @@
 
 | 稳定版 | JDK版本兼容性 | 发布日期 |
 | ------------- | ------------- | ------------|
+| 1.1.1  | 1.8+ | 04/15/2021 |
 | 1.1.0  | 1.8+ | 04/12/2021 |
 | 1.0.4  | 1.8+ | 10/30/2020 |
-| 1.0.3.1  | 1.8+ | 09/22/2020 |
 
 
 ## 功能特性
@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
 </dependency>
 ```
 
