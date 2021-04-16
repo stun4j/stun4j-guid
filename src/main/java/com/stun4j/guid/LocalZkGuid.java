@@ -35,16 +35,16 @@ public class LocalZkGuid {
   }
 
   public static LocalGuid init(String zkConnectStr, String zkNamespace, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> node = ZkGuidNode.start(zkConnectStr, (newNode) -> {
-      LocalGuid.instance().reset(newNode);
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, (nodeNewInfo) -> {
+      LocalGuid.instance().reset(nodeNewInfo);
     }, zkNamespace, ipStartWith);
-    return LocalGuid.init(node);
+    return LocalGuid.init(nodeInfo);
   }
 
   public static LocalGuid init(Builder zkClientBuilder, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> node = ZkGuidNode.start(zkClientBuilder, (newNode) -> {
-      LocalGuid.instance().reset(newNode);
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, (nodeNewInfo) -> {
+      LocalGuid.instance().reset(nodeNewInfo);
     }, ipStartWith);
-    return LocalGuid.init(node);
+    return LocalGuid.init(nodeInfo);
   }
 }
