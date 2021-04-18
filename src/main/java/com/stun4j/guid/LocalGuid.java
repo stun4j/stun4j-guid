@@ -82,14 +82,14 @@ public final class LocalGuid {
 
     INSTANCE.doCoreInit(nodeInfo);
     initialized = true;
-    LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", nodeInfo.getLeft(), nodeInfo.getRight());
+    LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", nodeInfo.getLeft(),
+        nodeInfo.getRight());
     return INSTANCE;
   }
 
   public static LocalGuid instance() {
     argument(initialized, "local-guid must be initialized in the very begining");
     // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
-    // TODO mj:provider patterns for user to choose,in reset/reconnect scenario
     state(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)), "being initialized");
     return INSTANCE;
   }
