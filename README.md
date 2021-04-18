@@ -60,7 +60,7 @@ long id2 = LocalGuid.instance().next();
 ```
 //步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
 LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk地址*/)
-//步骤2.获取id(同上，略)
+//步骤2.获取id(同 '方式1的步骤2'，略)
 ```
 
 ## 注意事项
