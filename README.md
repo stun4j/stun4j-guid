@@ -1,26 +1,27 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### Global unique id generator, distributed, ultra fast, easy to use / [中文版](README_zh_CN.md) 
+### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en_US.md) 
 
 
-| Stable Release Version | JDK Version compatibility | Release Date |
+| 稳定版 | JDK版本兼容性 | 发布日期 |
 | ------------- | ------------- | ------------|
 | 1.1.1  | 1.8+ | 04/15/2021 |
 | 1.1.0  | 1.8+ | 04/12/2021 |
 | 1.0.4  | 1.8+ | 10/30/2020 |
 
-## Feature
-* Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
-* Clound-native friendly,fully workable on virtualization environment with floating ip/port i.e. k8s,docker etc.
-* Ultra fast on id-generating, **over million QPS per single process/node**
-* Monotonic increasing mechanism, based on twitter-snowflake algorithm, clock-backwards awarness,self-healable
-* The artifact is a very-small jar,with minimal dependencies, easy to use
 
-## How to get
-### Method 1: Maven Repository
+## 功能特性
+* 生成全局唯一的ID，适用于分布式环境(以进程为最小工作单元，在单机/伪集群中照常工作)
+* 云原生、虚拟环境友好，对IP、端口的漂移无感
+* 生成速度极快，轻松达到 **单机百万级的QPS**
+* ID趋势递增，基于twitter-snowflake算法，针对时钟回退能够有限自愈
+* 制品为袖珍型jar包，依赖极少，易于使用和集成
 
-Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull stun4j-guid from the central maven repository, just add these to your pom.xml file:
+## 如何获取
+
+### 方式1：从Maven中央仓库获取
+在你工程的**pom.xml**中加入如下片段，即可从maven的中央仓库拉取：
 
 ```xml
 <dependency>
@@ -30,62 +31,58 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 </dependency>
 ```
 
-### Method 2: Building from the sources
 
-As it is maven project, buidling is just a matter of executing the following in your console:
+### 方式2：通过源码构建
+切到项目根目录，在控制台执行如下maven命令：
 
 	$ mvn clean package
 
+会在target目录中生成 stun4j-guid-VERSION.jar，放入你工程的classpath即可
 
-This will produce the stun4j-guid-VERSION.jar file under the target directory.
-
-## How to use
-### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \"process identity uniqueness\" by themselves)：
+## 如何使用
+### 方式1：直接使用(适用于节点数少，希望或有能力自行维护\"进程标识唯一性\"的应用)：
 
 ```
-//Step 1.Initialization (only once,usually when the application starts)
-/*datacenterId and workerId are used to uniquely identify a process or node, 
-and the combination of the two must be 'unique'*/
+//步骤1.初始化(仅需一次，一般即应用启动时)
+//datacenterId和workerId被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
-//Step 2.Get the id
-//Method 1:
+//步骤2.获取id
+//方式1:
 long id1 = guid.next();
-//Method 2:
+//方式2:
 long id2 = LocalGuid.instance().next();
 
 ```
 
-### Method 2(recommend\*)：Use in conjunction with distributed coordinator (\"process identity uniqueness\" automatically maintained)：
+### 方式2(推荐\*)：结合分布式协调者使用(\"进程标识唯一性\"自动得到维护)：
 
 ```
-//Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
-LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
-//Step 2.Get the id(same as above, omitted)
+//步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
+LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk地址*/)
+//步骤2.获取id(同上，略)
 ```
 
+## 注意事项
+* 本ID生成算法是时间敏感的，所以集群环境务必开启NTP服务(尽可能做到时钟前向同步)，保障总体正确性和可用性
+* 采用[Zookeeper](http://zookeeper.apache.org/)作为分布式协调者时，客户端采用[Curator](http://curator.apache.org/)和ZK进行通信，需要注意Curator和Zookeeper的**兼容性**问题
+	* 目前测试下来，Curator **2.13.0** 这个版本的兼容性比较好，可兼容Zookeeper **3.4.10+(server版本)**
+	* 如使用**Zookeeper 3.5+(server版本)**，那么至少应搭配Curator **3.3.0+**版本
+* 一个集群支持的进程/节点数量的上限是1024，这是经典snowflake算法非常核心的一点，也就是说datacenterId和workerId的取值范围都是 **[**0,31**]**，所以有1024种组合，在本框架的实现中也充分映射了这个概念，比如对分布式协调者一个namespace下参与者的数量也做了相同的限制
+* **再次重申：datacenterId和workerId结合起来被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的**
 
-## Notes
-* This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability
-* When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the **compatibility** between Curator and Zookeeper
-	* Tests so far shows that Curator **2.13.0** is compatible with **Zookeeper 3.4.10+(server version)**
-	* If you are using **Zookeeper 3.5+(server version)**, you should at least use it with Curator **3.3.0+**
-* The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
-* **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
-
-## Roadmap
-* To support more kinds of distributed-coordinator e.g. etcd
-* Try the best to solve the time-sensitive problem
-* To support ID semantic customization
+## 路线图
+* 支持更多分布式协调者 如etcd等
+* 尽可能克服时间敏感问题
+* 支持Id语义定制
 * TBD
 
-## Contributions
-To help Stun4J-Guid development you are encouraged to
 
-* For reporting bugs, provide suggestion/feedback, please open an [issue](https://github.com/stun4j/stun4j-guid/issues/new)
-* For contributing improvements or new features, please send in the pull request and open an [issue](https://github.com/stun4j/stun4j-guid/issues/new) for discussion and progress tracking
-* Star :star2: the project
+## 参与
+* 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
+* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
+* 不吝赐:star2: 
 
-## License
+## 开源许可协议
 
-This project is licensed under **Apache Software License, Version 2.0**
+本项目采用 **Apache Software License, Version 2.0**
