@@ -4,11 +4,11 @@
 ### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en_US.md) 
 
 
-| 稳定版 | JDK版本兼容性 | 发布日期 |
+| 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
-| 1.1.1  | 1.8+ | 04/15/2021 |
-| 1.1.0  | 1.8+ | 04/12/2021 |
-| 1.0.4  | 1.8+ | 10/30/2020 |
+| 1.1.2  | 优化启动性能 | 04/27/2021 |
+| 1.1.1  | ID唯一性潜在bug修复 | 04/15/2021 |
+| 1.1.0  | 优化UUID同时引入了一种FastUUID算法 | 04/12/2021 |
 
 
 ## 功能特性
@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
 </dependency>
 ```
 
@@ -47,12 +47,19 @@
 //datacenterId和workerId被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
-//步骤2.获取id
+//步骤2.获取id (snowflake算法)
 //方式1:
 long id1 = guid.next();
+
 //方式2:
 long id2 = LocalGuid.instance().next();
 
+//此外，框架也集成了两种性能优越的UUID算法
+//方式1 (FastUUID算法):
+String uuid1 = LocalGuid.uuid();
+
+//方式2 (改良过的JDK UUID):
+String uuid2 = LocalGuid.uuid(true/*是否以-区隔*/, false/*是否采用极速模式*/);
 ```
 
 ### 方式2(推荐\*)：结合分布式协调者使用(\"进程标识唯一性\"自动得到维护)：
@@ -81,7 +88,10 @@ LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk地址*/)
 ## 参与
 * 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
 * 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
-* 不吝赐:star2: 
+* 不吝赐:star2:
+
+## 感谢
+*  极速UUID算法使用了fast-uuid这个[项目](https://github.com/codahale/fast-uuid)
 
 ## 开源许可协议
 

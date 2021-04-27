@@ -4,11 +4,11 @@
 ### Global unique id generator, distributed, ultra fast, easy to use / [中文版](README.md) 
 
 
-| Stable Release Version | JDK Version compatibility | Release Date |
+| Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
-| 1.1.1  | 1.8+ | 04/15/2021 |
-| 1.1.0  | 1.8+ | 04/12/2021 |
-| 1.0.4  | 1.8+ | 10/30/2020 |
+| 1.1.2  | Optimize startup performance | 04/27/2021 |
+| 1.1.1  | ID uniqueness potential bug fix | 04/15/2021 |
+| 1.1.0  | Optimize UUID and introduce a FastuUID algorithm | 04/12/2021 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -26,7 +26,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
 </dependency>
 ```
 
@@ -48,12 +48,18 @@ This will produce the stun4j-guid-VERSION.jar file under the target directory.
 and the combination of the two must be 'unique'*/
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
-//Step 2.Get the id
+//Step 2.Get the id (snowflake algorithm)
 //Method 1:
 long id1 = guid.next();
 //Method 2:
 long id2 = LocalGuid.instance().next();
 
+//In addition, the framework also integrates two excellent UUID algorithms
+//Method 1 (FastUUID algorithm):
+String uuid1 = LocalGuid.uuid();
+
+//Method 2 (Improved JDK UUID):
+String uuid2 = LocalGuid.uuid(true/*Whether it is separated by '-'*/, false/*Whether to use top speed mode*/);
 ```
 
 ### Method 2(recommend\*)：Use in conjunction with distributed coordinator (\"process identity uniqueness\" automatically maintained)：
@@ -85,6 +91,9 @@ To help Stun4J-Guid development you are encouraged to
 * For reporting bugs, provide suggestion/feedback, please open an [issue](https://github.com/stun4j/stun4j-guid/issues/new)
 * For contributing improvements or new features, please send in the pull request and open an [issue](https://github.com/stun4j/stun4j-guid/issues/new) for discussion and progress tracking
 * Star :star2: the project
+
+## Thanks
+*  The FastUUID algorithm uses the Fast-UUID [project](https://github.com/codahale/fast-uuid)
 
 ## License
 
