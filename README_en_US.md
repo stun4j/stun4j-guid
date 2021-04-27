@@ -8,11 +8,7 @@
 | ------------- | ------------- | ------------|
 | 1.1.2  | Optimize startup performance | 04/27/2021 |
 | 1.1.1  | ID uniqueness potential bug fix | 04/15/2021 |
-<<<<<<< HEAD
 | 1.1.0  | Optimize UUID and introduce a FastuUID algorithm | 04/12/2021 |
-=======
-| 1.1.0  | Optimize native UUID and add a new FastUUID algorithm | 04/12/2021 |
->>>>>>> 67179ac7ed6c3926ba8978df4d299deb5a54f01c
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
