@@ -6,9 +6,9 @@
 
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
+| 1.1.3  | 优化内部算法性能| 07/22/2021 |
 | 1.1.2  | 优化启动性能 | 04/27/2021 |
 | 1.1.1  | ID唯一性潜在bug修复 | 04/15/2021 |
-| 1.1.0  | 优化UUID同时引入了一种FastUUID算法 | 04/12/2021 |
 
 
 ## 功能特性
@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.2</version>
+  <version>1.1.3</version>
 </dependency>
 ```
 

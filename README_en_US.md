@@ -6,13 +6,13 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
+| 1.1.3  | Optimize internal algorithm performance | 07/22/2021 |
 | 1.1.2  | Optimize startup performance | 04/27/2021 |
 | 1.1.1  | ID uniqueness potential bug fix | 04/15/2021 |
-| 1.1.0  | Optimize UUID and introduce a FastuUID algorithm | 04/12/2021 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
-* Clound-native friendly,fully workable on virtualization environment with floating ip/port i.e. k8s,docker etc.
+* Clound-native friendly,fully workable on virtualization environment with floating ip/port.
 * Ultra fast on id-generating, **over million QPS per single process/node**
 * Monotonic increasing mechanism, based on twitter-snowflake algorithm, clock-backwards awarness,self-healable
 * The artifact is a very-small jar,with minimal dependencies, easy to use
@@ -26,7 +26,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.2</version>
+  <version>1.1.3</version>
 </dependency>
 ```
 
