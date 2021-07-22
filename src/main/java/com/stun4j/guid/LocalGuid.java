@@ -1,4 +1,4 @@
-/*-
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,7 +19,6 @@ package com.stun4j.guid;
 import static com.stun4j.guid.utils.Asserts.argument;
 import static com.stun4j.guid.utils.Asserts.notNull;
 import static com.stun4j.guid.utils.Asserts.state;
-import static com.stun4j.guid.utils.Strings.leftPad;
 import static com.stun4j.guid.utils.Strings.lenientFormat;
 
 import java.security.SecureRandom;
@@ -176,12 +175,7 @@ public final class LocalGuid {
   }
 
   public long getTimeMsFromId(long idExpectingSameEpoch) {
-    // assume the id is an unsigned num
-    String binStr = Long.toUnsignedString(idExpectingSameEpoch, 2);
-    binStr = leftPad(binStr, 64, "0");
-    String timeDeltaStr = binStr.substring(1, 42);
-    long back = Long.valueOf(timeDeltaStr, 2);
-    return back + this.epoch;
+    return (idExpectingSameEpoch >> timestampLeftShift & ~(-1L << 41L)) + this.epoch;
   }
   // <-
 
