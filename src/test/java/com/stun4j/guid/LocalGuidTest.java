@@ -131,7 +131,6 @@ public class LocalGuidTest {
           times++;
         }
       }
-      scanner.close();
       assertThat(times).isEqualTo(expectedInitTimes);
     }
 
