@@ -13,7 +13,7 @@
 		<Property name="logVerbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
 
 		<Property name="logRootPath">logs-test</Property>
-		<Property name="logRollFileSize">100MB</Property>
+		<Property name="logRollFileSize">500MB</Property>
 		<Property name="logRollMaxCnt">100</Property>
 	</Properties>
 	<Appenders>

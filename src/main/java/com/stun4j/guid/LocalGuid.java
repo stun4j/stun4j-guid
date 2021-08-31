@@ -18,7 +18,6 @@ package com.stun4j.guid;
 
 import static com.stun4j.guid.utils.Asserts.argument;
 import static com.stun4j.guid.utils.Asserts.notNull;
-import static com.stun4j.guid.utils.Asserts.state;
 import static com.stun4j.guid.utils.Strings.lenientFormat;
 
 import java.security.SecureRandom;
@@ -63,8 +62,7 @@ public final class LocalGuid {
   private int sequenceOffset = -1;
 
   private static final LocalGuid INSTANCE = new LocalGuid();
-  private static boolean initialized = false;
-  private static boolean gate = false;
+  private static volatile boolean initialized = false;
 
   private final UUIDFast uuidFast = new UUIDFast(new SecureRandom());
 
@@ -88,8 +86,6 @@ public final class LocalGuid {
 
   public static LocalGuid instance() {
     argument(initialized, "local-guid must be initialized in the very begining");
-    // TODO mj:instead of 'synchronized/volatile/happens-before/out-of-order' stuffs,hope this way works
-    state(gate || (INSTANCE.datacenterId > -1 && INSTANCE.workerId > -1 && (gate = true)), "being initialized");
     return INSTANCE;
   }
 
@@ -109,7 +105,6 @@ public final class LocalGuid {
 
   public synchronized long next() {
     long timestamp = currentTimeMs();
-
     // handle time clock backwards(coz NTP is not safe)
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
@@ -255,13 +250,12 @@ public final class LocalGuid {
   // only for test purpose
   // FIXME mj:building a cross-classload test instead
   // ----------------------------------------------------------------
-  void reset() {
+  synchronized void reset() {
     datacenterId = -1L;
     workerId = -1L;
     sequence = 0L;
     lastTimestamp = -1L;
     initialized = false;
-    gate = false;
   }
 
 }

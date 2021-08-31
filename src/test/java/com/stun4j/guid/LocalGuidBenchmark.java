@@ -33,12 +33,14 @@ public class LocalGuidBenchmark {
     if (mode == 0) {
       for (int i = 0; i < round; i++) {
         guid.next();
+//        LocalGuid.instance().next();
         meter.mark();
       }
     } else {
       for (int i = 0; i < round; i++) {
         E.execute(() -> {
           guid.next();
+//          LocalGuid.instance().next();
         });
         meter.mark();
       }
