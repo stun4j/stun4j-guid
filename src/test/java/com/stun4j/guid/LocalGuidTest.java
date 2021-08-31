@@ -2,9 +2,9 @@ package com.stun4j.guid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.File;
 import java.util.Date;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -108,21 +108,32 @@ public class LocalGuidTest {
     assertThat(set).hasSize(1);
 
     Thread.sleep(1000);
-    String[] cmd = { "/bin/sh", "-c", "grep 'INFO (' logs-test/info.log|wc -l" };
-    Process proc = Runtime.getRuntime().exec(cmd);
-    proc.waitFor();
-    try (BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"))) {
-      StringBuilder builder = new StringBuilder();
-      String line;
-      while ((line = in.readLine()) != null) {
-        builder.append(line);
-        break;
+    // String[] cmd = { "/bin/sh", "-c", "grep 'INFO (' logs-test/info.log|wc -l" };
+    // Process proc = Runtime.getRuntime().exec(cmd);
+    // proc.waitFor();
+    // try (BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"))) {
+    // StringBuilder builder = new StringBuilder();
+    // String line;
+    // while ((line = in.readLine()) != null) {
+    // builder.append(line);
+    // break;
+    // }
+    // assertThat(builder.toString().trim()).containsSequence(expectedInitTimes + "");
+    // } finally {
+    // if (proc != null) {
+    // proc.destroy();
+    // }
+    // }
+    try (Scanner scanner = new Scanner(new File("logs-test/info.log")).useDelimiter("\n")) {
+      int times = 0;
+      while (scanner.hasNext()) {
+        if (scanner.next().contains("INFO (")) {
+          times++;
+        }
       }
-      assertThat(builder.toString().trim()).containsSequence(expectedInitTimes + "");
-    } finally {
-      if (proc != null) {
-        proc.destroy();
-      }
+      scanner.close();
+      assertThat(times).isEqualTo(expectedInitTimes);
     }
+
   }
 }
