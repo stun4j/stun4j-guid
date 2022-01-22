@@ -234,6 +234,8 @@
 			<properties>
 				<!-- zk server 3.4.14- supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
 				<curator.version>2.13.0</curator.version>
+        <maven.source.classifier>zk34-sources</maven.source.classifier>
+        <maven.javadoc.classifier>zk34-javadoc</maven.javadoc.classifier>
 			</properties>
 			<build>
 				<plugins>
@@ -279,6 +281,8 @@
 			<properties>
 				<!-- zk server 3.5+ supported -->
 				<curator.version>3.3.0</curator.version>
+        <maven.source.classifier>zk35-sources</maven.source.classifier>
+        <maven.javadoc.classifier>zk35-javadoc</maven.javadoc.classifier>
 			</properties>
 			<build>
 				<plugins>
@@ -327,8 +331,9 @@
 				</property>
 			</activation>
       <properties>
-        <!-- zk server 3.4.14- supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
         <curator.version>2.13.0</curator.version>
+        <maven.source.classifier>zk34-sources</maven.source.classifier>
+        <maven.javadoc.classifier>zk34-javadoc</maven.javadoc.classifier>
       </properties>
 			<build>
 				<plugins>
@@ -383,7 +388,7 @@
 		</snapshotRepository>
 		<repository>
 			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
 	</distributionManagement>
 </project>
