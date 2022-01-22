@@ -60,27 +60,6 @@ public abstract class ZkGuidNode {
 
   private static int reconnectRetryTimes = 0;
 
-  /** @deprecated in 1.1.0 */
-  public static Pair<Integer, Integer> start(String zkConnectStr) throws Exception {
-    return start(zkConnectStr, null, null, null);
-  }
-
-  /** @deprecated in 1.1.0 */
-  public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace) throws Exception {
-    return start(zkConnectStr, null, zkNamespace, null);
-  }
-
-  /** @deprecated in 1.1.0 */
-  public static Pair<Integer, Integer> start(String zkConnectStr, String zkNamespace, String ipStartWith)
-      throws Exception {
-    return start(zkConnectStr, null, zkNamespace, ipStartWith);
-  }
-
-  /** @deprecated in 1.1.0 */
-  public static Pair<Integer, Integer> start(Builder zkClientBuilder, String ipStartWith) throws Exception {
-    return start(zkClientBuilder, null, ipStartWith);
-  }
-
   public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect)
       throws Exception {
     return start(zkConnectStr, onReconnect, null, null);

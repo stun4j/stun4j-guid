@@ -83,13 +83,13 @@ public class LocalGuidTest {
 
   @Test
   public void _0_highConcurrencySingleton_init() throws Exception {
-    int ConcurrencyLvl = 500;
+    int concurrencyLvl = 500;
     int expectedInitTimes = 100;
     Set<LocalGuid> set = Sets.newConcurrentHashSet();
     for (int r = 0; r < expectedInitTimes; r++) {
-      CyclicBarrier barrier = new CyclicBarrier(ConcurrencyLvl);
-      CountDownLatch latch = new CountDownLatch(ConcurrencyLvl);
-      for (int i = 0; i < ConcurrencyLvl; i++) {
+      CyclicBarrier barrier = new CyclicBarrier(concurrencyLvl);
+      CountDownLatch latch = new CountDownLatch(concurrencyLvl);
+      for (int i = 0; i < concurrencyLvl; i++) {
         int idx = i;
         new Thread(() -> {
           try {

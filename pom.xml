@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.5.4</version>
+		<version>2.6.3</version>
 		<relativePath />
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.1.4-SNAPSHOT</version>
+	<version>1.2.0-SNAPSHOT</version>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
@@ -60,12 +60,6 @@
 		<!-- sdk -->
 		<java.version>1.8</java.version>
 
-		<!-- zk -->
-		<curator.version>2.13.0</curator.version>
-		<!-- zk server 3.5+ only -->
-		<!-- <curator.version>3.3.0+</curator.version> -->
-		<!-- /zk server 3.5+ only -->
-
 		<!-- maven-release -->
 		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
@@ -73,11 +67,11 @@
 		<maven-scm-provider-gitexe.version>1.9.5</maven-scm-provider-gitexe.version>
 
 		<!-- test -->
-		<log4j2.version>2.14.1</log4j2.version>
+		<log4j2.version>2.17.1</log4j2.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
-		<guava.version>30.1.1-jre</guava.version>
+		<guava.version>31.0.1-jre</guava.version>
 		<disruptor.version>3.4.4</disruptor.version>
-		<dropwizard-metrics.version>4.2.3</dropwizard-metrics.version>
+		<dropwizard-metrics.version>4.2.7</dropwizard-metrics.version>
 	</properties>
 
 	<dependencies>
@@ -88,6 +82,12 @@
 			<version>${curator.version}</version>
 			<!-- <scope>provided</scope> -->
 			<optional>true</optional>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- log -->
@@ -227,10 +227,70 @@
 
 	<profiles>
 		<profile>
-			<id>dev</id>
+			<id>dev-zk34</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
 			</activation>
+			<properties>
+				<!-- zk server 3.4.14- supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
+				<curator.version>2.13.0</curator.version>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<classifier>zk34</classifier>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+			<repositories>
+				<repository>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<id>nexus-aliyun</id>
+					<name>Nexus aliyun</name>
+					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<id>nexus-aliyun</id>
+					<name>Nexus aliyun</name>
+					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+
+		<profile>
+			<id>dev-zk35</id>
+			<properties>
+				<!-- zk server 3.5+ supported -->
+				<curator.version>3.3.0</curator.version>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<classifier>zk35</classifier>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
 			<repositories>
 				<repository>
 					<snapshots>
@@ -260,7 +320,6 @@
 		</profile>
 		<profile>
 			<id>release-sign-artifacts</id>
-			<!-- <id>release</id> -->
 			<activation>
 				<property>
 					<name>performRelease</name>
@@ -269,6 +328,14 @@
 			</activation>
 			<build>
 				<plugins>
+					<!-- force user to specify classifier -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<classifier>zk34</classifier>
+						</configuration>
+					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
