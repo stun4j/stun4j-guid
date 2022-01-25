@@ -6,9 +6,9 @@
 
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
-| 1.1.3  | 优化内部算法性能| 07/22/2021 |
-| 1.1.2  | 优化启动性能 | 04/27/2021 |
-| 1.1.1  | ID唯一性潜在bug修复 | 04/15/2021 |
+| 1.1.5 | 提升了核心组件的健壮性 | 01/25/2022 |
+| 1.1.3 | 优化内部算法性能 | 07/22/2021 |
+| 1.1.2 | 优化启动性能 | 04/27/2021 |
 
 
 ## 功能特性
@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.3</version>
+  <version>1.1.5</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@
 ## 如何使用
 ### 方式1：直接使用(适用于节点数少，希望或有能力自行维护\"进程标识唯一性\"的应用)：
 
-```
+```java
 //步骤1.初始化(仅需一次，一般即应用启动时)
 //datacenterId和workerId被用来唯一标识一个进程or节点，这两者的组合必须是'唯一'的
 LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
@@ -64,7 +64,7 @@ String uuid2 = LocalGuid.uuid(true/*是否以-区隔*/, false/*是否采用极�
 
 ### 方式2(推荐\*)：结合分布式协调者使用(\"进程标识唯一性\"自动得到维护)：
 
-```
+```java
 //步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
 LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk地址*/)
 //步骤2.获取id(同 '方式1的步骤2'，略)

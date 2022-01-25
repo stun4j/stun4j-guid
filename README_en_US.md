@@ -6,9 +6,9 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
-| 1.1.3  | Optimize internal algorithm performance | 07/22/2021 |
-| 1.1.2  | Optimize startup performance | 04/27/2021 |
-| 1.1.1  | ID uniqueness potential bug fix | 04/15/2021 |
+| 1.1.5 | Improved robustness of core components | 01/25/2022 |
+| 1.1.3 | Optimize internal algorithm performance | 07/22/2021 |
+| 1.1.2 | Optimize startup performance | 04/27/2021 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -26,7 +26,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.3</version>
+  <version>1.1.5</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@ This will produce the stun4j-guid-VERSION.jar file under the target directory.
 ## How to use
 ### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \"process identity uniqueness\" by themselves)：
 
-```
+```java
 //Step 1.Initialization (only once,usually when the application starts)
 /*datacenterId and workerId are used to uniquely identify a process or node, 
 and the combination of the two must be 'unique'*/
@@ -64,7 +64,7 @@ String uuid2 = LocalGuid.uuid(true/*Whether it is separated by '-'*/, false/*Whe
 
 ### Method 2(recommend\*)：Use in conjunction with distributed coordinator (\"process identity uniqueness\" automatically maintained)：
 
-```
+```java
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
 LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
