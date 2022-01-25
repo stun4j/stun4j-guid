@@ -12,11 +12,11 @@ import com.stun4j.guid.utils.Utils;
 
 public class LocalGuidBenchmark {
   static final ExecutorService E = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-      Runtime.getRuntime().availableProcessors(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1000),
+      Runtime.getRuntime().availableProcessors(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1024),
       new ThreadPoolExecutor.CallerRunsPolicy());
 
   public static void main(String[] args) {
-    byte mode = 0;// 0:single thread 1:multi-thread
+    byte mode = 1;// 0:single thread 1:multi-thread
     LocalGuid guid = LocalGuid.init(0, 0);
     // warm round
     for (int i = 0; i < 10_0000; i++) {
@@ -32,15 +32,15 @@ public class LocalGuidBenchmark {
     // start
     if (mode == 0) {
       for (int i = 0; i < round; i++) {
-        guid.next();
-//        LocalGuid.instance().next();
+        // guid.next();
+        LocalGuid.instance().next();
         meter.mark();
       }
     } else {
       for (int i = 0; i < round; i++) {
         E.execute(() -> {
-          guid.next();
-//          LocalGuid.instance().next();
+          // guid.next();
+          LocalGuid.instance().next();
         });
         meter.mark();
       }

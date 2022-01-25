@@ -42,6 +42,7 @@ public class LocalGuidUUIDBenchmark {
     } else {
       for (int i = 0; i < round; i++) {
         E.execute(() -> {
+//          LocalGuid.uuid(false, false);
           LocalGuid.uuid();
         });
         meter.mark();

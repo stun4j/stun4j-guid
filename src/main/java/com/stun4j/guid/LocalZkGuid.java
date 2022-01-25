@@ -22,7 +22,6 @@ import com.stun4j.guid.utils.Pair;
 
 /**
  * Helper class for 'LocalGuid' robustly collaborate with 'ZooKeeper'
- * 
  * @author Jay Meng
  */
 public class LocalZkGuid {

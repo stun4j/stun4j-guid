@@ -23,6 +23,7 @@ import static com.stun4j.guid.utils.Strings.lenientFormat;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,23 +38,22 @@ import com.stun4j.guid.utils.Utils;
  * <p>
  * {@link #next()} based on twitter-snowflake algorithm<br>
  * {@link #uuid()} based on jdk {@link java.util.UUID} (lower-case, without "-")
- * 
  * @author Jay Meng
  */
 public final class LocalGuid {
   private static final Logger LOG = LoggerFactory.getLogger(LocalGuid.class);
-  // Fri Feb 14 16:12:19 CST 2020 1581667939311
-  private final long epoch = 1581667939311L;
-  private final long workerIdBits = 5L;
-  private final long datacenterIdBits = 5L;
+  private static final long DC_ID_BITS_NUM = 5L;
+  private static final long WK_ID_BITS_NUM = 5L;
+  private static final long SEQ_BITS_NUM = 12L;
+  private static final long MAX_DC_ID = -1L ^ (-1L << DC_ID_BITS_NUM);
+  private static final long MAX_WK_ID = -1L ^ (-1L << WK_ID_BITS_NUM);
+  private static final long WK_ID_SHIFT = SEQ_BITS_NUM;
+  private static final long DC_ID_SHIFT = SEQ_BITS_NUM + WK_ID_BITS_NUM;
+  private static final long TIMESTAMPE_SHIFT = SEQ_BITS_NUM + WK_ID_BITS_NUM + DC_ID_BITS_NUM;
+  private static final long SEQ_MASK = -1L ^ (-1L << SEQ_BITS_NUM);
 
-  private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
-  private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
-  private final long sequenceBits = 12L;
-  private final long workerIdShift = sequenceBits;
-  private final long datacenterIdShift = sequenceBits + workerIdBits;
-  private final long timestampLeftShift = sequenceBits + workerIdBits + datacenterIdBits;
-  private final long sequenceMask = -1L ^ (-1L << sequenceBits);
+  // Fri Feb 14 16:12:19 CST 2020
+  private final long epoch = 1581667939311L;
   private long datacenterId = -1L;
   private long workerId = -1L;
   private long sequence = 0L;
@@ -61,32 +61,30 @@ public final class LocalGuid {
 
   private int sequenceOffset = -1;
 
-  private static final LocalGuid INSTANCE = new LocalGuid();
-  private static volatile boolean initialized = false;
+  private static final AtomicReference<LocalGuid> INSTANCE = new AtomicReference<>();
 
-  private final UUIDFast uuidFast = new UUIDFast(new SecureRandom());
+  private static final UUIDFast UUID_FAST = new UUIDFast(new SecureRandom());
 
-  public static LocalGuid init(int datacenterId, int workerId) {
-    return init(Pair.of(datacenterId, workerId));
-  }
-
-  public synchronized static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
-    if (initialized) {
-      LOG.warn("no need to initialize it again&again, the incoming node-info won't take effect [current={}, new={}]",
-          Pair.of(INSTANCE.datacenterId, INSTANCE.workerId), nodeInfo);
-      return INSTANCE;
+  public synchronized static LocalGuid init(int datacenterId, int workerId) {
+    LocalGuid cur;
+    if (INSTANCE.compareAndSet(null, cur = new LocalGuid())) {
+      try {
+        LocalGuid instance = cur.doCoreInit(datacenterId, workerId);
+        LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", datacenterId, workerId);
+        return instance;
+      } catch (Throwable e) {
+        reset();
+        throw e;
+      }
     }
-
-    INSTANCE.doCoreInit(nodeInfo);
-    initialized = true;
-    LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", nodeInfo.getLeft(),
-        nodeInfo.getRight());
-    return INSTANCE;
+    return INSTANCE.get();
   }
 
   public static LocalGuid instance() {
-    argument(initialized, "local-guid must be initialized in the very begining");
-    return INSTANCE;
+    LocalGuid instance;
+    argument((instance = INSTANCE.get()) != null && instance.datacenterId >= 0 && instance.workerId >= 0,
+        "local-guid must be initialized in the very begining");
+    return instance;
   }
 
   public static String uuid() {
@@ -98,9 +96,8 @@ public final class LocalGuid {
   }
 
   public static String uuid(boolean withHyphen, boolean ultrafast) {
-    return withHyphen ? (ultrafast ? INSTANCE.uuidFast.generate().toString() : UUID.randomUUID().toString())
-        : (ultrafast ? INSTANCE.uuidFast.generate().toStringWithoutHyphen()
-            : UUID.randomUUID().toStringWithoutHyphen());
+    return withHyphen ? (ultrafast ? UUID_FAST.generate().toString() : UUID.randomUUID().toString())
+        : (ultrafast ? UUID_FAST.generate().toStringWithoutHyphen() : UUID.randomUUID().toStringWithoutHyphen());
   }
 
   public synchronized long next() {
@@ -137,7 +134,7 @@ public final class LocalGuid {
 
     // core process
     if (lastTimestamp == timestamp) {
-      sequence = (sequence + 1) & sequenceMask;
+      sequence = (sequence + 1) & SEQ_MASK;
       if (sequence == 0) {
         timestamp = casGetNextMs(lastTimestamp);
       }
@@ -162,15 +159,15 @@ public final class LocalGuid {
     return from(dateTime.getTime());
   }
 
-  public long from(long timeMs) {
-    return ((timeMs - epoch) << timestampLeftShift) //
-        | (datacenterId << datacenterIdShift) //
-        | (workerId << workerIdShift) //
+  public synchronized long from(long timeMs) {
+    return ((timeMs - epoch) << TIMESTAMPE_SHIFT) //
+        | (datacenterId << DC_ID_SHIFT) //
+        | (workerId << WK_ID_SHIFT) //
         | sequence;
   }
 
   public long getTimeMsFromId(long idExpectingSameEpoch) {
-    return (idExpectingSameEpoch >> timestampLeftShift & ~(-1L << 41L)) + this.epoch;
+    return (idExpectingSameEpoch >> TIMESTAMPE_SHIFT & ~(-1L << 41L)) + this.epoch;
   }
   // <-
 
@@ -186,19 +183,18 @@ public final class LocalGuid {
     return System.currentTimeMillis();
   }
 
-  private void doCoreInit(Pair<Integer, Integer> nodeInfo) {
+  private LocalGuid doCoreInit(int datacenterId, int workerId) {
     // basic check
-    long datacenterId = nodeInfo.getLeft();
-    long workerId = nodeInfo.getRight();
-    long maxDatacenterId = this.maxDatacenterId;
-    long maxWorkerId = this.maxWorkerId;
-    argument(datacenterId <= maxDatacenterId && datacenterId >= 0,
-        "datacenterId can't be greater than %s or less than 0", maxDatacenterId);
-    argument(workerId <= maxWorkerId && workerId >= 0, "workerId can't be greater than %s or less than 0", maxWorkerId);
+    argument(datacenterId <= MAX_DC_ID && datacenterId >= 0, "datacenterId can't be greater than %s or less than 0",
+        MAX_DC_ID);
+    argument(workerId <= MAX_WK_ID && workerId >= 0, "workerId can't be greater than %s or less than 0", MAX_WK_ID);
 
     // check passed, do initialize
-    this.datacenterId = datacenterId;
-    this.workerId = workerId;
+    synchronized (this) {
+      this.datacenterId = datacenterId;
+      this.workerId = workerId;
+    }
+    return this;
   }
 
   private void vibrateSequenceOffset() {
@@ -224,14 +220,17 @@ public final class LocalGuid {
     return workerId;
   }
 
+  static LocalGuid init(Pair<Integer, Integer> nodeInfo) {
+    return init(nodeInfo.getLeft(), nodeInfo.getRight());
+  }
+
   // mainly for reconnect purpose
-  // ----------------------------------------------------------------
   synchronized void reset(Pair<Integer, Integer> newNodeInfo) {
     // compare and check
-    long curDatacenterIdId = INSTANCE.datacenterId;
-    long curWorkerId = INSTANCE.workerId;
-    long newDatacenterId = newNodeInfo.getLeft();
-    long newWorkerId = newNodeInfo.getRight();
+    long curDatacenterIdId = this.datacenterId;
+    long curWorkerId = this.workerId;
+    int newDatacenterId = newNodeInfo.getLeft();
+    int newWorkerId = newNodeInfo.getRight();
     if (curDatacenterIdId == newDatacenterId && curWorkerId == newWorkerId) {
       LOG.info("neither the datacenterId nor the workerId has changed,local-guid reset ignored [current={}, new={}]",
           lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
@@ -243,19 +242,24 @@ public final class LocalGuid {
     LOG.warn("datacenterId or workerId being changed [current={}, new={}]",
         lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
         lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
-    doCoreInit(newNodeInfo);
+    doCoreInit(newDatacenterId, newWorkerId);
     LOG.info("local-guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
-  // only for test purpose
-  // FIXME mj:building a cross-classload test instead
-  // ----------------------------------------------------------------
-  synchronized void reset() {
-    datacenterId = -1L;
-    workerId = -1L;
-    sequence = 0L;
-    lastTimestamp = -1L;
-    initialized = false;
+  // mainly for test purpose(extremely rare for init-rollback)
+  // TODO mj:building a cross-classloader test instead
+  synchronized static void reset() {
+    LocalGuid instance = INSTANCE.get();
+    if (instance == null) {
+      return;
+    }
+    synchronized (instance) {
+      instance.datacenterId = -1L;
+      instance.workerId = -1L;
+      instance.sequence = 0L;
+      instance.lastTimestamp = -1L;
+    }
+    INSTANCE.set(null);
   }
 
 }

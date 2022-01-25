@@ -11,8 +11,10 @@ public class LocalGuidErrorTest {
   @Before
   public void mockReset() {
     try {
-      LocalGuid.instance().reset();
-    } catch (Exception e) {
+      LocalGuid.reset();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      System.exit(-1);
     }
   }
 

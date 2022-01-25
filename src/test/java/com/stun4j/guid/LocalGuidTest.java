@@ -8,6 +8,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -16,6 +17,7 @@ import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.Sets;
 import com.stun4j.guid.utils.Pair;
+import com.stun4j.guid.utils.Strings;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalGuidTest {
@@ -23,24 +25,26 @@ public class LocalGuidTest {
   @Before
   public void mockReset() {
     try {
-      LocalGuid.instance().reset();
-    } catch (Exception e) {
+      LocalGuid.reset();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      System.exit(-1);
     }
   }
 
   @Test
   public void _1_basicSingleton() {
     LocalGuid.init(1, 1);
-    assertThat(1).isEqualTo(LocalGuid.instance().getDatacenterId());
-    assertThat(1).isEqualTo(LocalGuid.instance().getWorkerId());
+    assertThat(LocalGuid.instance().getDatacenterId()).isEqualTo(1);
+    assertThat(LocalGuid.instance().getWorkerId()).isEqualTo(1);
 
     // assert the old singleton preserved
     LocalGuid.init(Pair.of(2, 2));
     LocalGuid instance;
     assertThat(instance = LocalGuid.instance()).isSameAs(LocalGuid.instance());
     assertThat(instance).isSameAs(LocalGuid.instance());
-    assertThat(1).isEqualTo(LocalGuid.instance().getDatacenterId());
-    assertThat(1).isEqualTo(LocalGuid.instance().getWorkerId());
+    assertThat(LocalGuid.instance().getDatacenterId()).isEqualTo(1);
+    assertThat(LocalGuid.instance().getWorkerId()).isEqualTo(1);
   }
   // FIXME mj:cross-classloader,multi-thread tests...
 
@@ -71,9 +75,10 @@ public class LocalGuidTest {
           barrier.await();
           LocalGuid instance = LocalGuid.instance();
           set.add(instance);
-          latch.countDown();
-        } catch (Exception e) {
+        } catch (Throwable e) {
           e.printStackTrace();
+        } finally {
+          latch.countDown();
         }
       }).start();
     }
@@ -96,16 +101,17 @@ public class LocalGuidTest {
             barrier.await();
             LocalGuid instance = LocalGuid.init(idx & 31, idx & 31);
             set.add(instance);
-            latch.countDown();
-          } catch (Exception e) {
+          } catch (Throwable e) {
             e.printStackTrace();
+          } finally {
+            latch.countDown();
           }
         }).start();
       }
       latch.await();
-      LocalGuid.instance().reset();
+      LocalGuid.reset();
     }
-    assertThat(set).hasSize(1);
+    assertThat(set).hasSize(expectedInitTimes);
 
     Thread.sleep(1000);
     // String[] cmd = { "/bin/sh", "-c", "grep 'INFO (' logs-test/info.log|wc -l" };
@@ -134,5 +140,102 @@ public class LocalGuidTest {
       assertThat(times).isEqualTo(expectedInitTimes);
     }
 
+  }
+
+  @Test
+  public void _4_basicGuid_next() throws Exception {
+    LocalGuid.init(0, 0);
+    int threadNum = 800;
+    int guidGenerateTimesPerThread = 100;
+    CyclicBarrier barrier = new CyclicBarrier(threadNum);
+    CountDownLatch latch = new CountDownLatch(threadNum);
+    Set<Long> set = Sets.newConcurrentHashSet();
+    for (int i = 0; i < threadNum; i++) {
+      new Thread(() -> {
+        try {
+          barrier.await();
+          LocalGuid instance = LocalGuid.instance();
+          for (int j = 0; j < guidGenerateTimesPerThread; j++) {
+            set.add(instance.next());
+          }
+        } catch (Throwable e) {
+          e.printStackTrace();
+        } finally {
+          latch.countDown();
+        }
+      }).start();
+    }
+    latch.await();
+    assertThat(set).hasSize(threadNum * guidGenerateTimesPerThread);
+  }
+
+  @Test
+  public void _5_highConcurrencyGuid_next_underMockHighFrequencyReconnect() throws Exception {
+    int threadNum = 800;
+    int guidGenerateTimesPerThread = 100;
+    Set<Long> set = Sets.newConcurrentHashSet();
+    Set<LocalGuid> set2 = Sets.newConcurrentHashSet();
+    CountDownLatch latch = new CountDownLatch(threadNum);
+    set2.add(LocalGuid.init(0, 0));
+    for (int i = 0; i < threadNum; i++) {
+      int idx = i + 1;
+      new Thread(() -> {
+        try {
+          String binStr = Strings.leftPad(Integer.toBinaryString(idx), 10, "0");
+          String highAsDatacenterId = binStr.substring(0, 5);
+          String lowAsWorkerId = binStr.substring(5, 10);
+          Integer datacenterId = Integer.valueOf(highAsDatacenterId, 2);
+          Integer workerId = Integer.valueOf(lowAsWorkerId, 2);
+
+          LocalGuid mutex;
+          LocalGuid instanceCached;
+          synchronized (mutex = LocalGuid.instance()) {
+            mutex.reset(Pair.of(datacenterId, workerId));
+            instanceCached = LocalGuid.init(datacenterId, workerId);
+            assertThat(mutex.getDatacenterId()).isEqualTo(datacenterId.intValue());
+            assertThat(mutex.getWorkerId()).isEqualTo(workerId.intValue());
+            assertThat(instanceCached.getDatacenterId()).isEqualTo(datacenterId.intValue());
+            assertThat(instanceCached.getWorkerId()).isEqualTo(workerId.intValue());
+          }
+          set2.add(mutex);
+          set2.add(instanceCached);
+          for (int j = 0; j < guidGenerateTimesPerThread; j++) {
+            set.add(instanceCached.next());
+          }
+        } catch (Throwable e) {
+          e.printStackTrace();
+        } finally {
+          latch.countDown();
+        }
+      }).start();
+    }
+    latch.await();
+    assertThat(set).hasSize(threadNum * guidGenerateTimesPerThread);
+    assertThat(set2).hasSize(1);
+  }
+
+  @Test
+  public void _6_basicGuid_uuid() throws Exception {
+    int threadNum = 800;
+    int guidGenerateTimesPerThread = 1000;
+    CyclicBarrier barrier = new CyclicBarrier(threadNum);
+    CountDownLatch latch = new CountDownLatch(threadNum);
+    Set<String> set = Sets.newConcurrentHashSet();
+    for (int i = 0; i < threadNum; i++) {
+      new Thread(() -> {
+        try {
+          barrier.await();
+          for (int j = 0; j < guidGenerateTimesPerThread; j++) {
+            set.add(LocalGuid.uuid());
+          }
+        } catch (Throwable e) {
+          e.printStackTrace();
+        } finally {
+          latch.countDown();
+        }
+      }).start();
+    }
+    latch.await();
+    assertThat(set).hasSize(threadNum * guidGenerateTimesPerThread);
   }
 }

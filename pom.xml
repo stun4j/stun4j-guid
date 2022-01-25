@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid</artifactId>
-	<version>1.1.4</version>
+	<version>1.1.5-SNAPSHOT</version>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
@@ -51,11 +51,6 @@
 		<url>https://github.com/stun4j/stun4j-guid/issues</url>
 	</issueManagement>
 
-	<!-- <ciManagement> -->
-	<!-- <system>Travis</system> -->
-	<!-- <url>https://travis-ci.org/stun4j/stun4j-guid</url> -->
-	<!-- </ciManagement> -->
-
 	<properties>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
@@ -70,7 +65,6 @@
 		<log4j2.version>2.17.1</log4j2.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<guava.version>31.0.1-jre</guava.version>
-		<disruptor.version>3.4.4</disruptor.version>
 		<dropwizard-metrics.version>4.2.7</dropwizard-metrics.version>
 	</properties>
 
@@ -158,12 +152,6 @@
 			<artifactId>commons-lang3</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.lmax</groupId>
-			<artifactId>disruptor</artifactId>
-			<version>${disruptor.version}</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -208,10 +196,6 @@
 					<pushChanges>false</pushChanges>
 					<mavenExecutorId>forked-path</mavenExecutorId>
 					<arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
-					<!-- <autoVersionSubmodules>true</autoVersionSubmodules> -->
-					<!-- <useReleaseProfile>false</useReleaseProfile> -->
-					<!-- <releaseProfiles>release</releaseProfiles> -->
-					<!-- <goals>deploy</goals> -->
 				</configuration>
 				<dependencies>
 					<dependency>

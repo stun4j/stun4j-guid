@@ -33,8 +33,8 @@ public class UUIDFast {
   // four bytes selected for their relatively high Hamming distances
   private static final byte A = 0b00000110;
   private static final byte B = 0b01111111;
-  private static final byte C = (byte) 0b10111000;
-  private static final byte D = (byte) 0b11000001;
+  private static final byte C = (byte)0b10111000;
+  private static final byte D = (byte)0b11000001;
 
   // underlying PRNG
   private final SecureRandom random;
@@ -44,7 +44,6 @@ public class UUIDFast {
 
   /**
    * Creates a new {@link UUIDFast} seeded from the given PRNG.
-   *
    * @param random a PRNG to use for a seed
    */
   public UUIDFast(SecureRandom random) {
@@ -67,15 +66,18 @@ public class UUIDFast {
 
   /**
    * Generates a random {@link UUID}.
-   *
    * @return a random {@link UUID}
    */
   public UUID generate() {
-    final long k0 = sipHash24(v0, v1, v2, v3, A);
-    final long k1 = sipHash24(v0, v1, v2, v3, B);
-    final long msb = (sipHash24(v0, v1, v2, v3, C) & ~0xF000L) | 0x4000L;
-    final long lsb = ((sipHash24(v0, v1, v2, v3, D) << 2) >>> 2) | 0x8000000000000000L;
-    reseed(k0, k1);
+    final long msb;
+    final long lsb;
+    synchronized (this) {
+      final long k0 = sipHash24(v0, v1, v2, v3, A);
+      final long k1 = sipHash24(v0, v1, v2, v3, B);
+      msb = (sipHash24(v0, v1, v2, v3, C) & ~0xF000L) | 0x4000L;
+      lsb = ((sipHash24(v0, v1, v2, v3, D) << 2) >>> 2) | 0x8000000000000000L;
+      reseed(k0, k1);
+    }
     return new UUID(msb, lsb);
   }
 

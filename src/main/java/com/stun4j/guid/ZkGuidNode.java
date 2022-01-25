@@ -99,8 +99,7 @@ public abstract class ZkGuidNode {
           case RECONNECTED:
             // TODO mj:reconnect behavior appears to be 'serial(concurrency level)', even at different epochs
             // TODO mj:are queued reconnects of different epochs?or we just don't care...
-            if (onReconnect == null)
-              return;
+            if (onReconnect == null) return;
             // int savedEpoch = reconnectEpoch.incrementAndGet();
             while (true) {
               // LOG.info("savedEpoch:{}, currentEpoch:{}", savedEpoch, reconnectEpoch);
@@ -192,6 +191,7 @@ public abstract class ZkGuidNode {
              * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works
              * wrong
              */
+            // TODO mj:optimized...
             String binStr = Strings.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
             String lowAsDatacenterId = binStr.substring(0, 5);
             String highAsWorkerId = binStr.substring(5, 10);
