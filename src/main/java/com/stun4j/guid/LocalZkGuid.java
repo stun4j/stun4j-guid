@@ -34,14 +34,14 @@ public class LocalZkGuid {
   }
 
   public static LocalGuid init(String zkConnectStr, String zkNamespace, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, (nodeNewInfo) -> {
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, nodeNewInfo -> {
       LocalGuid.instance().reset(nodeNewInfo);
     }, zkNamespace, ipStartWith);
     return LocalGuid.init(nodeInfo);
   }
 
   public static LocalGuid init(Builder zkClientBuilder, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, (nodeNewInfo) -> {
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, nodeNewInfo -> {
       LocalGuid.instance().reset(nodeNewInfo);
     }, ipStartWith);
     return LocalGuid.init(nodeInfo);

@@ -16,7 +16,7 @@ public class LocalGuidBenchmark {
       new ThreadPoolExecutor.CallerRunsPolicy());
 
   public static void main(String[] args) {
-    byte mode = 1;// 0:single thread 1:multi-thread
+    byte mode = 0;// 0:single thread 1:multi-thread
     LocalGuid guid = LocalGuid.init(0, 0);
     // warm round
     for (int i = 0; i < 10_0000; i++) {

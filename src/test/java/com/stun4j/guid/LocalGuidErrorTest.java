@@ -21,17 +21,18 @@ public class LocalGuidErrorTest {
   @Test
   public void basic() {
     long idBits = 5L;
-    long maxId = -1L ^ (-1L << idBits);
+    // long maxId = -1L ^ (-1L << idBits);
+    long maxId = ~(-1L << idBits);
     assertThat(maxId).isEqualTo(31);
-    String initMsg = "local-guid must be initialized in the very begining";
+    String initMsg = "The local-guid must be initialized in the very begining";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.instance())
         .withMessage(initMsg);
     // datacenterId range protect
-    String msg = "datacenterId can't be greater than " + maxId + " or less than 0";
+    String msg = "The datacenterId can't be greater than " + maxId + " or less than 0";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(-1, 0)).withMessage(msg);
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(32, 0)).withMessage(msg);
     // workerId range protect
-    msg = "workerId can't be greater than " + maxId + " or less than 0";
+    msg = "The workerId can't be greater than " + maxId + " or less than 0";
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0, -1)).withMessage(msg);
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0, 32)).withMessage(msg);
 

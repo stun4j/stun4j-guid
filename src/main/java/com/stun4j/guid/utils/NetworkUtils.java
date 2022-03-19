@@ -16,21 +16,25 @@
  */
 package com.stun4j.guid.utils;
 
+import static com.stun4j.guid.utils.Strings.lenientFormat;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stun4j.guid.exception.IpNotMatchException;
+
 /**
  * A simple network util
  * <p>
- * get best available local ip-address<br>
- * be able to pick specified ip by specifying ip-prefix
- * 
+ * Get best available local ip-address<br>
+ * Be able to pick specified ip by specifying ip-prefix and ip-segment range(only the third segment is supported)
  * @author Jay Meng
  */
 public final class NetworkUtils {
@@ -40,87 +44,131 @@ public final class NetworkUtils {
   static final String NULL_SAFE_LOCALHOST = "127.0.0.1";
   static final String ANYHOST = "0.0.0.0";
 
-  public static String getLocalHost() {
-    return getLocalHost(null);
+  public static String getLocalhost() {
+    return getLocalhost(null);
   }
 
-  public static String getLocalHost(String ipStartith) {
-    InetAddress address = getLocalAddress(ipStartith);
-    return address == null ? NULL_SAFE_LOCALHOST : address.getHostAddress();
+  public static String getLocalhost(String ipStartWith, int... theThirdSegmentRange) throws IpNotMatchException {
+    InetAddress address = doGetLocalAddress(ipStartWith, theThirdSegmentRange);
+    String rtn = address == null ? NULL_SAFE_LOCALHOST : address.getHostAddress();
+    if (!isIpMatch(() -> rtn, ipStartWith, theThirdSegmentRange)) {
+      // exception throw is a very strict manner
+      throw new IpNotMatchException(lenientFormat(
+          "Got unexpected local-ip-address, expect ip (start-with '%s' and third-seg-range %s), but the actual ip is '%s'", //
+          ipStartWith, //
+          (theThirdSegmentRange == null || theThirdSegmentRange.length == 0) ? "ignored"//
+              : "within " + Arrays.toString(theThirdSegmentRange), //
+          rtn));
+    }
+    return rtn;
   }
 
-  public static InetAddress getLocalAddress() {
-    return getLocalAddress(null);
-  }
-
-  public static InetAddress getLocalAddress(String ipStartwith) {
+  private synchronized static InetAddress doGetLocalAddress(String ipStartWith, int... theThirdSegmentRange) {
+    if (ipStartWith == null) {
+      Asserts.argument(theThirdSegmentRange == null || theThirdSegmentRange.length == 0,
+          "Only ip-segment checking is not supported yet");
+    }
+    // If the ip dosen't match the pattern,the local cache would be ignored
     InetAddress work;
-    if ((work = LOCAL_ADDRESS) != null && work.getHostAddress().startsWith(Optional.ofNullable(ipStartwith).orElse("")))
+    if ((work = LOCAL_ADDRESS) != null && isIpMatch(() -> work.getHostAddress(), ipStartWith, theThirdSegmentRange)) {
       return work;
-    InetAddress localAddress = getLocalAddress0(ipStartwith);
-    if (localAddress != null)
-      LOCAL_ADDRESS = localAddress;
-    return localAddress;
+    }
+    // Cache the ip if found available
+    InetAddress addr = doGetLocalAddress0(ipStartWith, theThirdSegmentRange);
+    if (addr != null) {
+      boolean needFilterIp = ipStartWith != null;
+      if (!needFilterIp) {
+        LOCAL_ADDRESS = addr;
+      } else if (isIpMatch(() -> addr.getHostAddress(), ipStartWith, theThirdSegmentRange)) {
+        LOCAL_ADDRESS = addr;
+      }
+    }
+    return addr;
   }
 
-  private static InetAddress getLocalAddress0(String ipStartwith) {
-    InetAddress localAddr = null;
+  private static boolean isIpMatch(Supplier<String> addrProvider, String ipStartwith, int... theThirdSegmentRange) {
     boolean needFilterIp = ipStartwith != null;
-    try {
-      localAddr = InetAddress.getLocalHost();
-      if (isValidAddress(localAddr)) {
-        if (needFilterIp && !localAddr.getHostAddress().startsWith(ipStartwith)) {
-          return null;
-        }
-        return localAddr;
-      }
-    } catch (Exception e) {
-      LOG.error("get ip address error, {}", e.getMessage(), e);
+    if (!needFilterIp) {
+      return true;
+    }
+    String addrStr;
+    if (!(addrStr = addrProvider.get()).startsWith(ipStartwith)) {
+      return false;
+    }
+    if (theThirdSegmentRange == null || theThirdSegmentRange.length == 0) {
+      return true;
+    }
+    String[] tmp;
+    if ((tmp = addrStr.split("\\.")).length != 4) {
+      return false;
     }
     try {
-      Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-      if (interfaces != null) {
-        while (interfaces.hasMoreElements()) {
-          try {
-            NetworkInterface network = interfaces.nextElement();
-            if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
-              continue;
-            }
-            Enumeration<InetAddress> addresses = network.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-              try {
-                InetAddress address = addresses.nextElement();
-                if (isValidAddress(address)) {
-                  if (needFilterIp && !address.getHostAddress().startsWith(ipStartwith)) {
-                    continue;
-                  }
-                  return address;
-                }
-              } catch (Exception e) {
-                LOG.error("get ip address error, {}", e.getMessage(), e);
-              }
-            }
-          } catch (Exception e) {
-            LOG.error("get ip address error, {}", e.getMessage(), e);
-          }
-        }
-      }
-    } catch (Exception e) {
-      LOG.error("get ip address error, {}", e.getMessage(), e);
+      return Arrays.binarySearch(theThirdSegmentRange, Integer.parseInt(tmp[2])) >= 0;
+    } catch (NumberFormatException e) {
+      return false;
     }
-    LOG.warn("could not get local host ip address, will use 127.0.0.1 instead");
-    return localAddr;
   }
 
-  static boolean isValidAddress(InetAddress inetAddr) {
-    if (inetAddr == null || inetAddr.isLoopbackAddress())
-      return false;
-    String name = inetAddr.getHostAddress();
-    return (name != null && !ANYHOST.equals(name) && !NULL_SAFE_LOCALHOST.equals(name)
-        && IP_PATTERN.matcher(name).matches());
+  private static InetAddress doGetLocalAddress0(String ipStartWith, int... theThirdSegmentRange) {
+    InetAddress fastAddr;
+    // boolean needFilterIp = ipStartwith != null;
+    try {
+      // fast pick
+      if (isValidAddress(fastAddr = InetAddress.getLocalHost())) {
+        // if (needFilterIp && !isIpMatch(() -> fastAddr.getHostAddress(), ipStartwith, theThirdSegmentRange)) {
+        // return null;
+        // }
+        return fastAddr;
+      }
+      // slow pick
+      Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+      if (interfaces == null) {
+        return null;
+      }
+      while (interfaces.hasMoreElements()) {
+        NetworkInterface network = null;
+        try {
+          network = interfaces.nextElement();
+          if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
+            continue;
+          }
+          Enumeration<InetAddress> addresses = network.getInetAddresses();
+          while (addresses.hasMoreElements()) {
+            try {
+              InetAddress addr = addresses.nextElement();
+              if (isValidAddress(addr)) {
+                // if (needFilterIp && !isIpMatch(() -> addr.getHostAddress(), ipStartwith, theThirdSegmentRange)) {
+                // continue;
+                // }
+                return addr;
+              }
+            } catch (Exception e) {
+              LOG.debug("Get local-ip-address error, trying next address [current-network-interface='{}'] |error: '{}'",
+                  network, e.getMessage());
+            }
+          }
+        } catch (Exception e) {
+          LOG.debug(
+              "Get local-ip-address error, trying next network-interface [current-network-interface='{}'] |error: '{}'",
+              network, e.getMessage());
+        }
+      }
+    } catch (Exception e) {
+      LOG.debug("Get local-ip-address error, will use '{}' instead", NULL_SAFE_LOCALHOST, e);
+      return null;
+    }
+
+    LOG.warn("Invalid local-ip-address '{}', will use '{}' instead", fastAddr, NULL_SAFE_LOCALHOST);
+    return null;
+  }
+
+  static boolean isValidAddress(InetAddress addr) {
+    if (addr == null || addr.isLoopbackAddress()) return false;
+    String addrStr = addr.getHostAddress();
+    return (addrStr != null && !ANYHOST.equals(addrStr) && !NULL_SAFE_LOCALHOST.equals(addrStr)
+        && IP_PATTERN.matcher(addrStr).matches());
   }
 
   private NetworkUtils() {
   }
-
 }

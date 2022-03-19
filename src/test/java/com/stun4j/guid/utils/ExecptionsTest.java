@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
+import com.stun4j.guid.exception.Execptions;
+
 public class ExecptionsTest {
   @Test
   public void checkedExceptionTest() {

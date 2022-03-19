@@ -16,8 +16,8 @@
  */
 package com.stun4j.guid;
 
+import static com.stun4j.guid.exception.Execptions.sneakyThrow;
 import static com.stun4j.guid.utils.Asserts.state;
-import static com.stun4j.guid.utils.Execptions.sneakyThrow;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public abstract class ZkGuidNode {
   // private static final AtomicInteger reconnectRetryTimes = new AtomicInteger(0);
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
       String ipStartWith) throws Exception {
-    state(STARTED.compareAndSet(false, true), "guid-node already started");
+    state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
     client = zkClientBuilder.build();
     client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
       @Override
@@ -117,7 +117,7 @@ public abstract class ZkGuidNode {
                 break;
               } catch (Throwable e) {
                 LOG.error(
-                    "local-guid can't reconnect with zookeeper, which greatly increases the risk of guid-duplication |error: '{}'",
+                    "The local-guid can't reconnect with zookeeper, which greatly increases the risk of guid-duplication |error: '{}'",
                     e.getMessage(), e);
                 Utils.sleepSeconds(reconnectRetryTimes++ % 11);// a simple 'step' sleep time TODO mj:11->config
               }
@@ -144,7 +144,7 @@ public abstract class ZkGuidNode {
       throws Exception {
     String processName = ManagementFactory.getRuntimeMXBean().getName();
     String processId = processName.substring(0, processName.indexOf('@'));
-    String selfIp = NetworkUtils.getLocalHost(ipStartWith);
+    String selfIp = NetworkUtils.getLocalhost(ipStartWith);
     String selfNodePath = Strings.lenientFormat("%s@%s#", selfIp, processId);
     String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
 
@@ -157,7 +157,7 @@ public abstract class ZkGuidNode {
       String ipByZkAutoGen = new String(client.getData().forPath(flashCheckPath));
       if (!selfIp.equals(ipByZkAutoGen)) {
         LOG.warn(
-            "found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
+            "Found different ip,ip is a very important identity identifing node-itself,to fix this problem,you may need to specify 'ipStartWith' or please contact administrator [ipByLocal={}], ipByZk={}",
             selfIp, ipByZkAutoGen);
         // TODO mj:error handle strategy,consider throwing exception here
       }
@@ -176,28 +176,26 @@ public abstract class ZkGuidNode {
             try {
               snapshotAllNodes = client.getChildren().forPath(ZK_NODES_PATH_ROOT);
             } catch (NoNodeException e) {// this is reasonable,other exceptions not accepted
-              LOG.warn("might be the first initialization? [suspected err: {}]", e.getMessage());
+              LOG.warn("Might be the first initialization? [suspected error: {}]", e.getMessage());
               snapshotAllNodes = new ArrayList<>();
             }
-            state(snapshotAllNodes.size() < MAX_NUM_OF_WORKER_NODE, "number of worker-node over limited [max=%s]",
+            state(snapshotAllNodes.size() < MAX_NUM_OF_WORKER_NODE, "Number of worker-node over limited [max=%s]",
                 MAX_NUM_OF_WORKER_NODE);
 
             ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
                 .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
             String realNodeFullPath = dataWriter.forPath(selfNodeFullPath, null);
             int rtnNodeId = calculateNodeIdFrom(realNodeFullPath);
-            state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "wrong guid-node-id [nodeId=%s]", rtnNodeId);
+            state(rtnNodeId > 0 && rtnNodeId <= MAX_NUM_OF_WORKER_NODE, "Wrong guid-node-id [nodeId=%s]", rtnNodeId);
             /*
              * the working local-guid-node-id begin with 0,so 'rtnNodeId' has to be decreased by 1,otherwise it works
              * wrong
              */
-            // TODO mj:optimized...
-            String binStr = Strings.leftPad(Integer.toBinaryString(--rtnNodeId), 10, "0");
-            String lowAsDatacenterId = binStr.substring(0, 5);
-            String highAsWorkerId = binStr.substring(5, 10);
-            Integer datacenterId = Integer.valueOf(lowAsDatacenterId, 2);
-            Integer workerId = Integer.valueOf(highAsWorkerId, 2);
-            LOG.info("guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !isReconnect ? "" : "re",
+            // TODO mj:If bit-editing is available, don't forget that this may need to change as well->
+            int datacenterId = (--rtnNodeId) >> 5;
+            int workerId = (int)(rtnNodeId & ~(-1L << 5L));// rtnNodeId >> 0
+            // <-
+            LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !isReconnect ? "" : "re",
                 datacenterId, workerId, realNodeFullPath);
 
             return Triple.of(Pair.of(datacenterId, workerId), snapshotAllNodes, realNodeFullPath);
@@ -234,7 +232,7 @@ public abstract class ZkGuidNode {
     try {
       for (String nodeOldPath : snapshotAllNodes) {
         if (nodeOldPath.startsWith(selfNodePath)) {
-          LOG.warn(msgTpl = "guid-node is still alive, the old path '{}' would be replaced with the new path '{}'",
+          LOG.warn(msgTpl = "The guid-node is still alive, the old path '{}' would be replaced with the new path '{}'",
               nodeOldFullPath = ZK_NODES_PATH_ROOT + "/" + nodeOldPath, nodeNewFullPath);
           client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldFullPath);
           break;

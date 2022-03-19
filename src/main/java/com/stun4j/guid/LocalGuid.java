@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.stun4j.guid.support.UUID;
 import com.stun4j.guid.support.UUIDFast;
+import com.stun4j.guid.utils.NetworkUtils;
 import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Utils;
 
@@ -45,12 +46,12 @@ public final class LocalGuid {
   private static final long DC_ID_BITS_NUM = 5L;
   private static final long WK_ID_BITS_NUM = 5L;
   private static final long SEQ_BITS_NUM = 12L;
-  private static final long MAX_DC_ID = -1L ^ (-1L << DC_ID_BITS_NUM);
-  private static final long MAX_WK_ID = -1L ^ (-1L << WK_ID_BITS_NUM);
+  private static final long MAX_DC_ID = ~(-1L << DC_ID_BITS_NUM);
+  private static final long MAX_WK_ID = ~(-1L << WK_ID_BITS_NUM);
   private static final long WK_ID_SHIFT = SEQ_BITS_NUM;
   private static final long DC_ID_SHIFT = SEQ_BITS_NUM + WK_ID_BITS_NUM;
   private static final long TIMESTAMPE_SHIFT = SEQ_BITS_NUM + WK_ID_BITS_NUM + DC_ID_BITS_NUM;
-  private static final long SEQ_MASK = -1L ^ (-1L << SEQ_BITS_NUM);
+  private static final long SEQ_MASK = ~(-1L << SEQ_BITS_NUM);
 
   // Fri Feb 14 16:12:19 CST 2020
   private final long epoch = 1581667939311L;
@@ -70,20 +71,48 @@ public final class LocalGuid {
     if (INSTANCE.compareAndSet(null, cur = new LocalGuid())) {
       try {
         LocalGuid instance = cur.doCoreInit(datacenterId, workerId);
-        LOG.info("local-guid successfully initialized [datacenterId={}, workerId={}]", datacenterId, workerId);
+        LOG.info("The local-guid is successfully initialized [datacenterId={}, workerId={}]", datacenterId, workerId);
         return instance;
       } catch (Throwable e) {
         reset();
         throw e;
       }
     }
-    return INSTANCE.get();
+    cur = INSTANCE.get();
+    long curDatacenterId;
+    long curWorkerId;
+    synchronized (cur) {
+      curDatacenterId = cur.datacenterId;
+      curWorkerId = cur.workerId;
+    }
+    if (curDatacenterId != datacenterId || curWorkerId != workerId) {
+      LOG.warn("The local-guid has already been initialized,new initialization was ignored [current={}, new={}]",
+          lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
+          lenientFormat("dcId:%s,wkId:%s", datacenterId, workerId));
+    }
+    return cur;
+  }
+
+  public static LocalGuid initWithLocalIp() {
+    return initWithLocalIp(null);
+  }
+
+  public synchronized static LocalGuid initWithLocalIp(String ipStartWith, int... theThirdSegmentRange) {
+    String localIp = NetworkUtils.getLocalhost(ipStartWith, theThirdSegmentRange);
+    int last3 = Integer.parseInt(localIp.substring(localIp.lastIndexOf(".") + 1));
+    // TODO mj:If bit-editing is available, don't forget that this may need to change as well->
+    int datacenterId = last3 >> 5;
+    int workerId = (int)(last3 & ~(-1L << 5L));
+    // <-
+    LOG.info("The local-guid is initializing with [local-ip={}, datacenterId={}, workerId={}]", localIp, datacenterId,
+        workerId);
+    return init(datacenterId, workerId);
   }
 
   public static LocalGuid instance() {
     LocalGuid instance;
     argument((instance = INSTANCE.get()) != null && instance.datacenterId >= 0 && instance.workerId >= 0,
-        "local-guid must be initialized in the very begining");
+        "The local-guid must be initialized in the very begining");
     return instance;
   }
 
@@ -106,13 +135,13 @@ public final class LocalGuid {
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
       if (timeLagMs >= 5000) {// TODO mj:5000->config
-        String msg = lenientFormat("clock moving backwards detected,too much time lag [lag=%sms]",
+        String msg = lenientFormat("Clock moving backwards detected,too much time lag [lag=%sms]",
             lastTimestamp - timestamp);
         LOG.error(msg);
         throw new RuntimeException(msg);
       }
-      LOG.warn("clock moving backwards detected [time lag={}ms],try self-healing now...", timeLagMs);
-      Pair<Long, Long> rtn = Utils.timeAwareRun((timeMsToChase) -> {
+      LOG.warn("Clock moving backwards detected [time lag={}ms],try self-healing now...", timeLagMs);
+      Pair<Long, Long> rtn = Utils.timeAwareRun(timeMsToChase -> {
         long curTimeMsChasing;
         // TODO mj:use random sleep time to reduce cpu cost
         while ((curTimeMsChasing = currentTimeMs()) < this.lastTimestamp) {
@@ -127,7 +156,7 @@ public final class LocalGuid {
         }
         return curTimeMsChasing;
       }, timeLagMs);
-      LOG.info("self-healed from clock moving backwards, cost {}ms", rtn.getLeft());
+      LOG.info("Self healed from clock moving backwards, cost {}ms", rtn.getLeft());
       // now we've got timestamp chased
       timestamp = rtn.getRight();
     }
@@ -155,7 +184,7 @@ public final class LocalGuid {
 
   // convenience method->
   public long from(Date dateTime) {
-    notNull(dateTime, "datetime can't be null");
+    notNull(dateTime, "The dateTime can't be null");
     return from(dateTime.getTime());
   }
 
@@ -185,9 +214,9 @@ public final class LocalGuid {
 
   private LocalGuid doCoreInit(int datacenterId, int workerId) {
     // basic check
-    argument(datacenterId <= MAX_DC_ID && datacenterId >= 0, "datacenterId can't be greater than %s or less than 0",
+    argument(datacenterId <= MAX_DC_ID && datacenterId >= 0, "The datacenterId can't be greater than %s or less than 0",
         MAX_DC_ID);
-    argument(workerId <= MAX_WK_ID && workerId >= 0, "workerId can't be greater than %s or less than 0", MAX_WK_ID);
+    argument(workerId <= MAX_WK_ID && workerId >= 0, "The workerId can't be greater than %s or less than 0", MAX_WK_ID);
 
     // check passed, do initialize
     synchronized (this) {
@@ -227,23 +256,24 @@ public final class LocalGuid {
   // mainly for reconnect purpose
   synchronized void reset(Pair<Integer, Integer> newNodeInfo) {
     // compare and check
-    long curDatacenterIdId = this.datacenterId;
+    long curDatacenterId = this.datacenterId;
     long curWorkerId = this.workerId;
     int newDatacenterId = newNodeInfo.getLeft();
     int newWorkerId = newNodeInfo.getRight();
-    if (curDatacenterIdId == newDatacenterId && curWorkerId == newWorkerId) {
-      LOG.info("neither the datacenterId nor the workerId has changed,local-guid reset ignored [current={}, new={}]",
-          lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
+    if (curDatacenterId == newDatacenterId && curWorkerId == newWorkerId) {
+      LOG.warn(
+          "Neither the datacenterId nor the workerId changed,the local-guid reset was ignored [current={}, new={}]",
+          lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
           lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
       return;
     }
 
     // do reset
-    LOG.warn("datacenterId or workerId being changed [current={}, new={}]",
-        lenientFormat("dcId:%s,wkId:%s", curDatacenterIdId, curWorkerId),
+    LOG.warn("The datacenterId or workerId is being changed [current={}, new={}]",
+        lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
         lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
     doCoreInit(newDatacenterId, newWorkerId);
-    LOG.info("local-guid successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
+    LOG.info("The local-guid is successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
   // mainly for test purpose(extremely rare for init-rollback)
