@@ -13,8 +13,13 @@ import org.junit.Test;
 import com.stun4j.guid.exception.IpNotMatchException;
 
 public class NetworkUtilsTest {
-  // Not applicable to Intranet environments (Intranet that cannot access the Internet)
   static boolean isNetworkUp() {
+    if (isNetworkUp0()) return true;
+    return isNetworkUp1();
+  }
+
+  // Not applicable to Intranet environments (Intranet that cannot access the Internet)
+  static boolean isNetworkUp0() {
     Process ps = null;
     try {
       ps = Runtime.getRuntime().exec("ping baidu.com");
@@ -31,6 +36,17 @@ public class NetworkUtilsTest {
       } catch (Exception e) {
       }
     }
+  }
+
+  // Expect to support both WAN and LAN
+  static boolean isNetworkUp1() {
+    String ip = tryGetIpAnotherWay("en0", "en1");
+    if (ip != null) {
+      return true;
+    }
+    ip = tryGetIpAnotherWay("lo0");
+    System.out.println("It seems that network is down, loopback ip is " + ip);
+    return false;
   }
 
   // Might only works on my machine(MBP with 2 network interfaces,one is wired,another one is wireless)
@@ -99,12 +115,14 @@ public class NetworkUtilsTest {
 
   @Test
   public void basicallyWorks4() {
-    if (!isNetworkUp()) {
-      System.err.println("network down,test canceled");
-      return;
-    }
     System.out.println("running network-up test");
     String expectedIp = tryGetIpAnotherWay("en0", "en1");
+    System.out.println("expectedIp: " + expectedIp);
+    if (!isNetworkUp()) {
+      assertThat(expectedIp).isNull();
+      expectedIp = NetworkUtils.NULL_SAFE_LOCALHOST;
+    }
+    // just the filter is not matched,but we have a valid ip->
     try {
       NetworkUtils.getLocalhost("888");
     } catch (IpNotMatchException e) {
@@ -112,17 +130,20 @@ public class NetworkUtilsTest {
           "Got unexpected local-ip-address, expect ip (start-with '888' and third-seg-range ignored), but the actual ip is '%s'",
           expectedIp));
     }
-    System.out.println("expectedIp: " + expectedIp);
+    // <-
+
+    // below shows the ip-seg-range filter works
+    // 1.the normal case
     String firstSeg = expectedIp.substring(0, expectedIp.indexOf(".") + 1);
     int thirdSeg = Integer.parseInt(expectedIp.split("\\.")[2]);
     System.out.println("firstSeg: " + firstSeg);
     System.out.println("thirdSeg: " + thirdSeg);
-    String addrStr = NetworkUtils.getLocalhost(firstSeg, thirdSeg, 888, 999);
+    String addrStr = NetworkUtils.getLocalhost(firstSeg, thirdSeg, 888, 999);// include thirdSeg
     assertThat(addrStr).isEqualTo(expectedIp);
-    // <-
 
+    // 2.the abnormal case
     try {
-      NetworkUtils.getLocalhost(firstSeg, 888, 999);
+      NetworkUtils.getLocalhost(firstSeg, 888, 999);// not include
     } catch (IpNotMatchException e) {
       assertThat(e.getMessage()).isEqualTo(Strings.lenientFormat(
           "Got unexpected local-ip-address, expect ip (start-with '%s' and third-seg-range within [888, 999]), but the actual ip is '%s'",

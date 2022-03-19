@@ -111,18 +111,22 @@ public final class NetworkUtils {
 
   private static InetAddress doGetLocalAddress0(String ipStartWith, int... theThirdSegmentRange) {
     InetAddress fastAddr;
-    // boolean needFilterIp = ipStartwith != null;
+    boolean needFilterIp = ipStartWith != null;
     try {
       // fast pick
       if (isValidAddress(fastAddr = InetAddress.getLocalHost())) {
-        // if (needFilterIp && !isIpMatch(() -> fastAddr.getHostAddress(), ipStartwith, theThirdSegmentRange)) {
-        // return null;
-        // }
-        return fastAddr;
+        if (!needFilterIp) {
+          return fastAddr;
+        }
+        if (isIpMatch(() -> fastAddr.getHostAddress(), ipStartWith, theThirdSegmentRange)) {
+          return fastAddr;
+        }
       }
       // slow pick
       Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
       if (interfaces == null) {
+        LOG.warn("No network-interface found, will use '{}' instead [local-ip-address={}]", NULL_SAFE_LOCALHOST,
+            fastAddr);
         return null;
       }
       while (interfaces.hasMoreElements()) {
@@ -135,12 +139,15 @@ public final class NetworkUtils {
           Enumeration<InetAddress> addresses = network.getInetAddresses();
           while (addresses.hasMoreElements()) {
             try {
-              InetAddress addr = addresses.nextElement();
-              if (isValidAddress(addr)) {
-                // if (needFilterIp && !isIpMatch(() -> addr.getHostAddress(), ipStartwith, theThirdSegmentRange)) {
-                // continue;
-                // }
-                return addr;
+              InetAddress slowAddr = addresses.nextElement();
+              if (isValidAddress(slowAddr)) {
+                if (!needFilterIp) {
+                  return slowAddr;
+                }
+                if (isIpMatch(() -> slowAddr.getHostAddress(), ipStartWith, theThirdSegmentRange)) {
+                  return slowAddr;
+                }
+                continue;
               }
             } catch (Exception e) {
               LOG.debug("Get local-ip-address error, trying next address [current-network-interface='{}'] |error: '{}'",
@@ -158,8 +165,11 @@ public final class NetworkUtils {
       return null;
     }
 
-    LOG.warn("Invalid local-ip-address '{}', will use '{}' instead", fastAddr, NULL_SAFE_LOCALHOST);
-    return null;
+    if (!isValidAddress(fastAddr)) {
+      LOG.warn("Invalid local-ip-address '{}', will use '{}' instead", fastAddr, NULL_SAFE_LOCALHOST);
+      return null;
+    }
+    return fastAddr;// this indicates that the address may not match the filter
   }
 
   static boolean isValidAddress(InetAddress addr) {
