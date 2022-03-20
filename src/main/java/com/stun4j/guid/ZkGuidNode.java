@@ -16,8 +16,8 @@
  */
 package com.stun4j.guid;
 
-import static com.stun4j.guid.exception.Execptions.sneakyThrow;
 import static com.stun4j.guid.utils.Asserts.state;
+import static com.stun4j.guid.utils.Execptions.sneakyThrow;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;

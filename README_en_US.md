@@ -6,9 +6,9 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
+| 1.1.6 | Another out-of-box GUID acquisition strategy is introduced, which can automatically obtain the GUID based on the end of the IP address | 03/21/2022 |
 | 1.1.5 | Improved robustness of core components | 01/25/2022 |
 | 1.1.3 | Optimize internal algorithm performance | 07/22/2021 |
-| 1.1.2 | Optimize startup performance | 04/27/2021 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -26,7 +26,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull 
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid</artifactId>
-  <version>1.1.5</version>
+  <version>1.1.6</version>
 </dependency>
 ```
 

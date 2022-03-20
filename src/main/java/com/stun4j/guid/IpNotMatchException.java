@@ -1,4 +1,4 @@
-package com.stun4j.guid.exception;
+package com.stun4j.guid;
 
 public class IpNotMatchException extends RuntimeException {
 

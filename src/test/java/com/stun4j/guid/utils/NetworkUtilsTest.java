@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
 
 import org.junit.Test;
 
-import com.stun4j.guid.exception.IpNotMatchException;
+import com.stun4j.guid.IpNotMatchException;
 
 public class NetworkUtilsTest {
   static boolean isNetworkUp() {
