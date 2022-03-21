@@ -62,7 +62,7 @@ String uuid1 = LocalGuid.uuid();
 String uuid2 = LocalGuid.uuid(true/*Whether it is separated by '-'*/, false/*Whether to use top speed mode*/);
 ```
 
-### Method 2(recommend*)：Use in conjunction with distributed coordinator ("process identity uniqueness" automatically maintained)：
+### Method 2(recommend*)：Use in conjunction with distributed coordinator ("process identity uniqueness" is automatically maintained)：
 
 ```java
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
