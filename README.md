@@ -82,7 +82,7 @@ LocalGuid guid
 //或 指定本机IP前缀、同时指定IP段的范围(目前仅支持'第3段')
 = LocalGuid.initWithLocalIp("192.168", 1);//代表在 192.168.1.* 中寻找
 = LocalGuid.initWithLocalIp("192.168", 1, 2);//代表在 192.168.[1,2].* 中寻找
-= LocalGuid.initWithLocalIp("192.168", new int[1, 2, 3]);//代表在 192.168.[1,2,3].* 中寻找
+= LocalGuid.initWithLocalIp("192.168", new int[]{1, 2, 3});//代表在 192.168.[1,2,3].* 中寻找
 
 //步骤2.获取id(同 '方式1的步骤2'，略)
 ```
