@@ -40,7 +40,7 @@ As it is maven project, buidling is just a matter of executing the following in 
 This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
 ## How to use
-### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining \"process identity uniqueness\" by themselves)：
+### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process identity uniqueness" by themselves)：
 
 ```java
 //Step 1.Initialization (only once,usually when the application starts)
@@ -62,7 +62,7 @@ String uuid1 = LocalGuid.uuid();
 String uuid2 = LocalGuid.uuid(true/*Whether it is separated by '-'*/, false/*Whether to use top speed mode*/);
 ```
 
-### Method 2(recommend\*)：Use in conjunction with distributed coordinator (\"process identity uniqueness\" automatically maintained)：
+### Method 2(recommend*)：Use in conjunction with distributed coordinator ("process identity uniqueness" automatically maintained)：
 
 ```java
 //Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
@@ -70,14 +70,36 @@ LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
 ```
 
+### Method 3(recommend*)：Use by identifying the local IP("node identity uniqueness" is automatically maintained) or by specifying the IP：
+
+```java
+//Step 1.Initialization (only once,usually when the application starts)
+//Automatic identification of local IP(note: currently only IPV4 is supported)
+LocalGuid guid 
+= LocalGuid.initWithLocalIp();
+//Or specify the local IP prefix (can be used in multiple network interface scenarios, such as '192', '192.168')
+= LocalGuid.initWithLocalIp("192.168");
+//Or specify the local IP prefix and the range of IP segments (currently only 'the third segment' is supported)
+= LocalGuid.initWithLocalIp("192.168", 1);//Search in 192.168.1.*
+= LocalGuid.initWithLocalIp("192.168", 1, 2);//Search in 192.168.[1,2].*
+= LocalGuid.initWithLocalIp("192.168", new int[1, 2, 3]);//Search in 192.168.[1,2,3].*
+
+//Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
+```
 
 ## Notes
-* This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability
-* When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the **compatibility** between Curator and Zookeeper
+1. This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability
+2. When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the **compatibility** between Curator and Zookeeper
 	* Tests so far shows that Curator **2.13.0** is compatible with **Zookeeper 3.4.10+(server version)**
 	* If you are using **Zookeeper 3.5+(server version)**, you should at least use it with Curator **3.3.0+**
-* The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
-* **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
+3. The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
+4. Extra attention should be paid to those using **Method 3** above：
+    * This method is used to identify nodes in **the end** of IP address segment. Therefore, this method is only applicable to scenarios where the **number of nodes <= 256**.(The reason is **a.** The number of nodes <= 1024. **b.** A single IP address segment range is [0,255].)
+    * It is important to avoid situations such as having a (pseudo) cluster (e.g. 3 processes) on a node, each process in the cluster has the same IP and has an independent local clock, so if you directly use this GUID algorithm to provide a logical global GUID in the cluster, it is impossible to avoid duplication
+5. As an extension, an important requirement for this ID algorithm to be globally unique is to expect to **maintain a singleton in the same JVM**, but we know that **different classloaders** can break this limitation (even in the same JVM), and this algorithm does not address this issue intentionally
+    * Normally, different classloaders are used for business isolation, but when you combine the different classloaders to use the GUID algorithm directly from the cluster perspective (or a logical business unit perspective), it is similar to **Question 4** above. And even the uniqueness of process granularity is a problem (because classLoaders are more granular)
+    * Of course, there is no need to worry too much. Today's mainstream microservice architectures are all **1 process 1 business unit**, and it is good practice to avoid the potential impact of complex Classloaders, and to avoid the pseudo-clustering or variations of these problems caused by **Question 4**
+6. **Again, the combination of datacenterId and workerId is used to uniquely identify a process or node, and the combination of the two must be 'unique'**
 
 ## Roadmap
 * To support more kinds of distributed-coordinator e.g. etcd
