@@ -82,7 +82,7 @@ LocalGuid guid
 //Or specify the local IP prefix and the range of IP segments (currently only 'the third segment' is supported)
 = LocalGuid.initWithLocalIp("192.168", 1);//Search in 192.168.1.*
 = LocalGuid.initWithLocalIp("192.168", 1, 2);//Search in 192.168.[1,2].*
-= LocalGuid.initWithLocalIp("192.168", new int[1, 2, 3]);//Search in 192.168.[1,2,3].*
+= LocalGuid.initWithLocalIp("192.168", new int[]{1, 2, 3});//Search in 192.168.[1,2,3].*
 
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
 ```
