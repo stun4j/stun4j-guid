@@ -74,9 +74,10 @@ LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
 
 ```java
 //Step 1.Initialization (only once,usually when the application starts)
-//Specify the local IP prefix (in the scenario of multiple network interfaces, pick the correct IP address. Currently, only IPV4 is supported)
+//Specify the local IP prefix (in the scenario of multiple network interfaces, pick the correct IP address)
 LocalGuid guid
-= LocalGuid.initWithLocalIp("192.168.1");
+= LocalGuid.initWithLocalIp("192.168.1");//currently, only IPV4 is supported
+
 //Or specify the local IP prefix and the IP segment(currently only 'the third segment' is supported)
 = LocalGuid.initWithLocalIp("192.168", 1);//Pick from 192.168.1.*
 
@@ -92,7 +93,7 @@ LocalGuid guid
 4. Extra attention should be paid to those using **Method 3** above：
     * Although the framework provides a flexible way to pick IP, strictly speaking, only something like the following can ensure global uniqueness：
       ```java
-      LocalGuid.initWithLocalIp("192.168", 1);//Indicates that IP addresses matching the network segment '192.168.1' are selected from the host
+      LocalGuid.initWithLocalIp("192.168", 1);//indicates that IP addresses matching the network segment '192.168.1' are selected from the host
       
       LocalGuid.initWithLocalIp("192.168.1");//equivalent as above
       ```
