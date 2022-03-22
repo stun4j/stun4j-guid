@@ -40,7 +40,7 @@ As it is maven project, buidling is just a matter of executing the following in 
 This will produce the stun4j-guid-VERSION.jar file under the target directory.
 
 ## How to use
-### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process identity uniqueness" by themselves)：
+### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process or node identity uniqueness" by themselves)：
 
 ```java
 //Step 1.Initialization (only once,usually when the application starts)
@@ -70,19 +70,15 @@ LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
 ```
 
-### Method 3(recommend*)：Use by identifying the local IP("node identity uniqueness" is automatically maintained) or by specifying the IP：
+### Method 3(Applicable to the same network segment)：Use by identifying the local IP("node identity uniqueness" is automatically maintained) or by specifying the IP：
 
 ```java
 //Step 1.Initialization (only once,usually when the application starts)
-//Automatic identification of local IP(note: currently only IPV4 is supported)
-LocalGuid guid 
-= LocalGuid.initWithLocalIp();
-//Or specify the local IP prefix (can be used in multiple network interface scenarios, such as '192', '192.168')
-= LocalGuid.initWithLocalIp("192.168");
-//Or specify the local IP prefix and the range of IP segments (currently only 'the third segment' is supported)
-= LocalGuid.initWithLocalIp("192.168", 1);//Search in 192.168.1.*
-= LocalGuid.initWithLocalIp("192.168", 1, 2);//Search in 192.168.[1,2].*
-= LocalGuid.initWithLocalIp("192.168", new int[]{1, 2, 3});//Search in 192.168.[1,2,3].*
+//Specify the local IP prefix (in the scenario of multiple network interfaces, pick the correct IP address. Currently, only IPV4 is supported)
+LocalGuid guid
+= LocalGuid.initWithLocalIp("192.168.1");
+//Or specify the local IP prefix and the IP segment(currently only 'the third segment' is supported)
+= LocalGuid.initWithLocalIp("192.168", 1);//Pick from 192.168.1.*
 
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
 ```
@@ -94,8 +90,24 @@ LocalGuid guid
 	* If you are using **Zookeeper 3.5+(server version)**, you should at least use it with Curator **3.3.0+**
 3. The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
 4. Extra attention should be paid to those using **Method 3** above：
-    * This method is used to identify nodes in **the end** of IP address segment. Therefore, this method is only applicable to scenarios where the **number of nodes <= 256**.(The reason is **a.** The number of nodes <= 1024. **b.** A single IP address segment range is [0,255].)
-    * It is important to avoid situations such as having a (pseudo) cluster (e.g. 3 processes) on a node, each process in the cluster has the same IP and has an independent local clock, so if you directly use this GUID algorithm to provide a logical global GUID in the cluster, it is impossible to avoid duplication
+    * Although the framework provides a flexible way to pick IP, strictly speaking, only something like the following can ensure global uniqueness：
+      ```java
+      LocalGuid.initWithLocalIp("192.168", 1);//Indicates that IP addresses matching the network segment '192.168.1' are selected from the host
+      
+      LocalGuid.initWithLocalIp("192.168.1");//equivalent as above
+      ```
+    * This method is used to identify nodes in **the end** of IP address segment. Therefore, this method is only applicable to scenarios where **in the same network segment** and the **number of nodes <= 256**.(The reason is **a.** The number of nodes <= 1024. **b.** A single IP address segment range is [0,255]).In other words, the end of the IP may be repeated in different network segments, resulting in the destruction of the global uniqueness of the GUID. Therefore, we will clarify the other API usage problems as follows:
+      ```java
+      /*
+       * The following uses may break the global uniqueness of GUID
+       * in uncertain network environments(such as multiple network
+       * interfaces or multiple network segments)
+       */
+      LocalGuid.initWithLocalIp();//automatic selection of local IP, too arbitrary(for development, testing only)
+      LocalGuid.initWithLocalIp("192.168");//range is too large
+      LocalGuid.initWithLocalIp("192.168", 1, 2);//range is too large
+      ```
+    * It is important to avoid situations such as having a (pseudo) cluster (e.g. 3 processes) on a node, each process in the cluster has the same IP and has an independent local clock(Only ensure single process uniqueness), so if you directly use this GUID algorithm to provide a logical global GUID in the cluster, it is impossible to avoid duplication
 5. As an extension, an important requirement for this ID algorithm to be globally unique is to expect to **maintain a singleton in the same JVM**, but we know that **different classloaders** can break this limitation (even in the same JVM), and this algorithm does not address this issue intentionally
     * Normally, different classloaders are used for business isolation, but when you combine the different classloaders to use the GUID algorithm directly from the cluster perspective (or a logical business unit perspective), it is similar to **Question 4** above. And even the uniqueness of process granularity is a problem (because classLoaders are more granular)
     * Of course, there is no need to worry too much. Today's mainstream microservice architectures are all **1 process 1 business unit**, and it is good practice to avoid the potential impact of complex Classloaders, and to avoid the pseudo-clustering or variations of these problems caused by **Question 4**
