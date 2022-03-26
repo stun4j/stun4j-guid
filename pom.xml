@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.4</version>
+		<version>2.6.5</version>
 		<relativePath />
 	</parent>
 	<groupId>com.stun4j</groupId>
@@ -65,7 +65,6 @@
 		<log4j2.version>2.17.2</log4j2.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<guava.version>31.1-jre</guava.version>
-		<dropwizard-metrics.version>4.2.9</dropwizard-metrics.version>
 	</properties>
 
 	<dependencies>

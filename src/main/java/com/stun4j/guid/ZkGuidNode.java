@@ -40,12 +40,11 @@ import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.guid.utils.CloseableUtils;
 import com.stun4j.guid.utils.NetworkUtils;
-import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Strings;
-import com.stun4j.guid.utils.Triple;
 import com.stun4j.guid.utils.Utils;
+import com.stun4j.guid.utils.Utils.Pair;
+import com.stun4j.guid.utils.Utils.Triple;
 
 /** @author Jay Meng */
 public abstract class ZkGuidNode {
@@ -135,7 +134,7 @@ public abstract class ZkGuidNode {
       return coreProcess(ipStartWith, client, false);
 
     } catch (Throwable e) {
-      CloseableUtils.closeQuietly(client);
+      Utils.closeQuietly(client);
       throw e;
     }
   }
@@ -246,7 +245,7 @@ public abstract class ZkGuidNode {
 
   static {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      CloseableUtils.closeQuietly(client);
+      Utils.closeQuietly(client);
     }));
   }
 }

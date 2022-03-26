@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 import com.stun4j.guid.support.UUID;
 import com.stun4j.guid.support.UUIDFast;
 import com.stun4j.guid.utils.NetworkUtils;
-import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Utils;
+import com.stun4j.guid.utils.Utils.Pair;
 
 /**
  * Guid generator,without any remote-coordination

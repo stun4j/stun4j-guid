@@ -18,7 +18,7 @@ package com.stun4j.guid;
 
 import org.apache.curator.framework.CuratorFrameworkFactory.Builder;
 
-import com.stun4j.guid.utils.Pair;
+import com.stun4j.guid.utils.Utils.Pair;
 
 /**
  * Helper class for 'LocalGuid' robustly collaborate with 'ZooKeeper'

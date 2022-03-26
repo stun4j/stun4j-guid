@@ -8,7 +8,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -16,8 +15,8 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.Sets;
-import com.stun4j.guid.utils.Pair;
 import com.stun4j.guid.utils.Strings;
+import com.stun4j.guid.utils.Utils.Pair;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalGuidTest {
