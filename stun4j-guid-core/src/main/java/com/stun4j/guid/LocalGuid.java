@@ -109,6 +109,10 @@ public final class LocalGuid {
     return init(datacenterId, workerId);
   }
 
+  public static boolean isAllowInitialization() {
+    return INSTANCE.get() == null;
+  }
+
   public static LocalGuid instance() {
     LocalGuid instance;
     argument((instance = INSTANCE.get()) != null && instance.datacenterId >= 0 && instance.workerId >= 0,
