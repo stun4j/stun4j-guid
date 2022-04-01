@@ -1,8 +1,10 @@
-package com.stun4j.guid.utils;
+package com.stun4j.guid.core.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
+
+import com.stun4j.guid.core.utils.Execptions;
 
 public class ExecptionsTest {
   @Test

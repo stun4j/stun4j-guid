@@ -1,4 +1,4 @@
-package com.stun4j.guid;
+package com.stun4j.guid.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,8 +15,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.Sets;
-import com.stun4j.guid.utils.Strings;
-import com.stun4j.guid.utils.Utils.Pair;
+import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.utils.Strings;
+import com.stun4j.guid.core.utils.Utils.Pair;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalGuidTest {

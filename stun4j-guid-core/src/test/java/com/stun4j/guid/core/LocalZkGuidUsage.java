@@ -1,6 +1,8 @@
-package com.stun4j.guid;
+package com.stun4j.guid.core;
 
-import com.stun4j.guid.utils.Utils;
+import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.LocalZkGuid;
+import com.stun4j.guid.core.utils.Utils;
 
 public class LocalZkGuidUsage {
 

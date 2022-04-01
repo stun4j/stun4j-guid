@@ -1,4 +1,4 @@
-package com.stun4j.guid.utils;
+package com.stun4j.guid.core.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -10,7 +10,9 @@ import java.net.UnknownHostException;
 
 import org.junit.Test;
 
-import com.stun4j.guid.IpNotMatchException;
+import com.stun4j.guid.core.IpNotMatchException;
+import com.stun4j.guid.core.utils.NetworkUtils;
+import com.stun4j.guid.core.utils.Strings;
 
 public class NetworkUtilsTest {
   static boolean isNetworkUp() {

@@ -1,10 +1,12 @@
-package com.stun4j.guid;
+package com.stun4j.guid.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.stun4j.guid.core.LocalGuid;
 
 public class LocalGuidErrorTest {
 

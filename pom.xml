@@ -10,8 +10,8 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid-parent</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+	<version>${revision}</version>
+	<packaging>pom</packaging>
 
 	<name>Stun4J Guid</name>
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
@@ -51,12 +51,14 @@
 		<system>Github</system>
 		<url>https://github.com/stun4j/stun4j-guid/issues</url>
 	</issueManagement>
-  
-  <modules>
-    <module>stun4j-guid-core</module>
-  </modules>
+
+	<modules>
+		<module>stun4j-guid-core</module>
+		<module>stun4j-guid-spring-boot-starter</module>
+	</modules>
 
 	<properties>
+		<revision>1.2.0-SNAPSHOT</revision>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
 
@@ -82,6 +84,31 @@
 			</resource>
 		</resources>
 		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<version>1.2.7</version>
+				<configuration>
+					<updatePomFile>true</updatePomFile>
+					<flattenMode>resolveCiFriendliesOnly</flattenMode>
+				</configuration>
+				<executions>
+					<execution>
+						<id>flatten</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>flatten</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>flatten.clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>

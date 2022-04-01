@@ -1,10 +1,10 @@
-package com.stun4j.guid;
+package com.stun4j.guid.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
-import com.stun4j.guid.utils.Strings;
+import com.stun4j.guid.core.utils.Strings;
 
 public class ZkGuidNodeTest {
   @Test

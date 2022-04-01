@@ -1,20 +1,19 @@
-/*-
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+/*
+ * Copyright 2020-2022 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.guid.utils;
+package com.stun4j.guid.core.utils;
 
 import static java.util.logging.Level.WARNING;
 
@@ -42,13 +41,12 @@ public final class Strings {
    * formatter, for both of the reasons just discussed.
    * <p>
    * <b>Warning:</b> Only the exact two-character placeholder sequence {@code "%s"} is recognized.
-   *
    * @param template a string containing zero or more {@code "%s"} placeholder sequences. {@code
-   *     null}    is treated as the four-character string {@code "null"}.
-   * @param args     the arguments to be substituted into the message template. The first argument specified is
-   *                 substituted for the first occurrence of {@code "%s"} in the template, and so forth. A {@code null}
-   *                 argument is converted to the four-character string {@code "null"}; non-null values are converted to
-   *                 strings using {@link Object#toString()}.
+   *     null} is treated as the four-character string {@code "null"}.
+   * @param args the arguments to be substituted into the message template. The first argument specified is
+   *        substituted for the first occurrence of {@code "%s"} in the template, and so forth. A {@code null}
+   *        argument is converted to the four-character string {@code "null"}; non-null values are converted to
+   *        strings using {@link Object#toString()}.
    * @since 25.1
    */
   // TODO(diamondm) consider using Arrays.toString() for array parameters
@@ -56,7 +54,7 @@ public final class Strings {
     template = String.valueOf(template); // null -> "null"
 
     if (args == null) {
-      args = new Object[] { "(Object[])null" };
+      args = new Object[]{"(Object[])null"};
     } else {
       for (int i = 0; i < args.length; i++) {
         args[i] = lenientToString(args[i]);
@@ -125,14 +123,12 @@ public final class Strings {
 
   /**
    * A String for a space character.
-   *
    * @since 3.2
    */
   public static final String SPACE = " ";
 
   /**
    * The empty String {@code ""}.
-   * 
    * @since 2.0
    */
   public static final String EMPTY = "";
@@ -151,6 +147,7 @@ public final class Strings {
    * <p>
    * Pad to a size of {@code size}.
    * </p>
+   * 
    * <pre>
    * StringUtils.leftPad(null, *, *)      = null
    * StringUtils.leftPad("", 3, "z")      = "zzz"
@@ -163,8 +160,8 @@ public final class Strings {
    * StringUtils.leftPad("bat", 5, "")    = "  bat"
    * </pre>
    *
-   * @param str    the String to pad out, may be null
-   * @param size   the size to pad to
+   * @param str the String to pad out, may be null
+   * @param size the size to pad to
    * @param padStr the String to pad with, null or empty treated as single space
    * @return left padded String or original String if no padding is necessary, {@code null} if null String input
    */
@@ -203,6 +200,7 @@ public final class Strings {
    * <p>
    * Returns padding using the specified delimiter repeated to a given length.
    * </p>
+   * 
    * <pre>
    * StringUtils.repeat('e', 0)  = ""
    * StringUtils.repeat('e', 3)  = "eee"
@@ -214,8 +212,7 @@ public final class Strings {
    * require a pair of {@code char}s to be represented. If you are needing to support full I18N of your applications
    * consider using {@link #repeat(String, int)} instead.
    * </p>
-   *
-   * @param ch     character to repeat
+   * @param ch character to repeat
    * @param repeat number of times to repeat char, negative treated as zero
    * @return String with repeated character
    * @see #repeat(String, int)
@@ -238,6 +235,7 @@ public final class Strings {
    * <p>
    * Pad to a size of {@code size}.
    * </p>
+   * 
    * <pre>
    * StringUtils.leftPad(null, *, *)     = null
    * StringUtils.leftPad("", 3, 'z')     = "zzz"
@@ -247,8 +245,8 @@ public final class Strings {
    * StringUtils.leftPad("bat", -1, 'z') = "bat"
    * </pre>
    *
-   * @param str     the String to pad out, may be null
-   * @param size    the size to pad to
+   * @param str the String to pad out, may be null
+   * @param size the size to pad to
    * @param padChar the character to pad with
    * @return left padded String or original String if no padding is necessary, {@code null} if null String input
    * @since 2.0
@@ -273,6 +271,7 @@ public final class Strings {
    * <p>
    * Checks if a CharSequence is empty ("") or null.
    * </p>
+   * 
    * <pre>
    * StringUtils.isEmpty(null)      = true
    * StringUtils.isEmpty("")        = true
@@ -284,7 +283,6 @@ public final class Strings {
    * NOTE: This method changed in Lang version 2.0. It no longer trims the CharSequence. That functionality is available
    * in isBlank().
    * </p>
-   *
    * @param cs the CharSequence to check, may be null
    * @return {@code true} if the CharSequence is empty or null
    * @since 3.0 Changed signature from isEmpty(String) to isEmpty(CharSequence)

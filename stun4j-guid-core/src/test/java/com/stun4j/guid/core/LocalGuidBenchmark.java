@@ -1,4 +1,4 @@
-package com.stun4j.guid;
+package com.stun4j.guid.core;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -8,23 +8,20 @@ import java.util.concurrent.TimeUnit;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import com.stun4j.guid.utils.Utils;
+import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.utils.Utils;
 
-public class LocalGuidUUIDBenchmark {
+public class LocalGuidBenchmark {
   static final ExecutorService E = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-      Runtime.getRuntime().availableProcessors(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1000),
+      Runtime.getRuntime().availableProcessors(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1024),
       new ThreadPoolExecutor.CallerRunsPolicy());
 
   public static void main(String[] args) {
-    byte mode = 1;// 0:single thread 1:multi-thread
-    // LocalGuid guid = LocalGuid.init(0, 0);
+    byte mode = 0;// 0:single thread 1:multi-thread
+    LocalGuid guid = LocalGuid.init(0, 0);
     // warm round
     for (int i = 0; i < 10_0000; i++) {
-      String uuid = LocalGuid.uuid();
-      // take a glance
-      if (i < 10) {
-        System.out.println(uuid);
-      }
+      guid.next();
     }
     // benchmark round
     MetricRegistry registry = new MetricRegistry();
@@ -36,14 +33,15 @@ public class LocalGuidUUIDBenchmark {
     // start
     if (mode == 0) {
       for (int i = 0; i < round; i++) {
-        LocalGuid.uuid();
+        // guid.next();
+        LocalGuid.instance().next();
         meter.mark();
       }
     } else {
       for (int i = 0; i < round; i++) {
         E.execute(() -> {
-//          LocalGuid.uuid(false, false);
-          LocalGuid.uuid();
+          // guid.next();
+          LocalGuid.instance().next();
         });
         meter.mark();
       }
