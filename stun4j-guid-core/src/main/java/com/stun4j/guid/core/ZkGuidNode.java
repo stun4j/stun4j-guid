@@ -138,7 +138,7 @@ public abstract class ZkGuidNode {
     }
   }
 
-  private static Pair<Integer, Integer> coreProcess(String ipStartWith, CuratorFramework client, boolean isReconnect)
+  private static Pair<Integer, Integer> coreProcess(String ipStartWith, CuratorFramework client, boolean reconnect)
       throws Exception {
     String processName = ManagementFactory.getRuntimeMXBean().getName();
     String processId = processName.substring(0, processName.indexOf('@'));
@@ -193,7 +193,7 @@ public abstract class ZkGuidNode {
             int datacenterId = (--rtnNodeId) >> 5;
             int workerId = (int)(rtnNodeId & ~(-1L << 5L));// rtnNodeId >> 0
             // <-
-            LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !isReconnect ? "" : "re",
+            LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !reconnect ? "" : "re",
                 datacenterId, workerId, realNodeFullPath);
 
             return Triple.of(Pair.of(datacenterId, workerId), snapshotAllNodes, realNodeFullPath);
