@@ -1,4 +1,4 @@
-# How to use **core library** / [Chinese](README.md)
+# How to use core library / [Chinese](README.md)
 ## Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process or node identity uniqueness" by themselves)：
 
 ```java
@@ -9,9 +9,9 @@ LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
 //Step 2.Get the id (snowflake algorithm)
 //Method 1:
-long id1 = guid.next();
+Long id1 = guid.next();
 //Method 2:
-long id2 = LocalGuid.instance().next();
+Long id2 = LocalGuid.instance().next();
 
 //In addition, the framework also integrates two excellent UUID algorithms
 //Method 1 (FastUUID algorithm):
@@ -42,3 +42,5 @@ LocalGuid guid
 
 //Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
 ```
+
+[< Back to index](../README_en_US.md)

@@ -1,4 +1,4 @@
-# **核心库**使用说明 / [English](README_en_US.md)
+# 核心库使用说明 / [English](README_en_US.md)
 ## 方式1：直接使用(适用于节点数少，希望或有能力自行维护"进程或节点标识唯一性"的应用)：
 ```java
 //步骤1.初始化(仅需一次，一般即应用启动时)
@@ -7,10 +7,10 @@ LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
 
 //步骤2.获取id (snowflake算法)
 //方式1:
-long id1 = guid.next();
+Long id1 = guid.next();
 
 //方式2:
-long id2 = LocalGuid.instance().next();
+Long id2 = LocalGuid.instance().next();
 
 //此外，框架也集成了两种性能优越的UUID算法
 //方式1 (FastUUID算法):
@@ -39,4 +39,4 @@ LocalGuid guid
 //步骤2.获取id(同 '方式1的步骤2'，略)
 ```
 
-[首页](../README.md)
+[< 回索引](../README.md)
