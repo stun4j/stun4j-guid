@@ -48,7 +48,7 @@ $ mvn clean package
 
 ## 如何使用
 ### [**核心库**如何使用](stun4j-guid-core/README.md)
-### 专属的**spring-boot-starter**如何使用
+### [专属的**spring-boot-starter**如何使用](stun4j-guid-spring-boot-starter/README.md)
 
 ## 注意事项
 1. 本ID生成算法是时间敏感的，所以集群环境务必开启NTP服务(尽可能做到时钟前向同步)，保障总体正确性和可用性

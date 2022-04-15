@@ -28,4 +28,5 @@ public class BizService {
 ```
 
 ## 2. `application.yml`配置详解(TBD)
+
 [< 回索引](../README.md)
