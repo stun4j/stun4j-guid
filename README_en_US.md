@@ -6,9 +6,9 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
+| 1.2.1 | The spring-boot-starter customized for itself is introduced | 04/15/2022 |
 | 1.1.6 | Another out-of-box GUID acquisition strategy is introduced, which can automatically obtain the GUID based on the end of the IP address | 03/21/2022 |
 | 1.1.5 | Improved robustness of core components | 01/25/2022 |
-| 1.1.3 | Optimize internal algorithm performance | 07/22/2021 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -19,70 +19,34 @@
 
 ## How to get
 ### Method 1: Maven Repository
-
-Stun4J-Guid is deployed at sonatypes open source maven repository. You can pull stun4j-guid from the central maven repository, just add these to your pom.xml file:
-
+Stun4J-Guid is deployed at sonatypes open source maven repository. You can get it from the central maven repository, just add these to your pom.xml file:
+#### Get the **core library**, use it directly
 ```xml
 <dependency>
   <groupId>com.stun4j</groupId>
-  <artifactId>stun4j-guid</artifactId>
-  <version>1.1.6</version>
+  <artifactId>stun4j-guid-core</artifactId>
+  <version>1.2.1</version>
 </dependency>
 ```
-
+#### Or
+#### Get the customized **spring-boot-starter**, it is easy to use in spring-boot projects
+```xml
+<dependency>
+  <groupId>com.stun4j.boot</groupId>
+  <artifactId>stun4j-guid-spring-boot-starter</artifactId>
+  <version>1.2.1</version>
+</dependency>
+```
 ### Method 2: Building from the sources
-
 As it is maven project, buidling is just a matter of executing the following in your console:
-
-	$ mvn clean package
-
-
-This will produce the stun4j-guid-VERSION.jar file under the target directory.
+```shell
+$ mvn clean package
+```
+`stun4j-guid-core-<version>.jar` and `stun4J-guid-spring-boot-starter-<version>.jar` will be generated in their respective target directories and placed in your project's classpath.
 
 ## How to use
-### Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process or node identity uniqueness" by themselves)：
-
-```java
-//Step 1.Initialization (only once,usually when the application starts)
-/*datacenterId and workerId are used to uniquely identify a process or node, 
-and the combination of the two must be 'unique'*/
-LocalGuid guid = LocalGuid.init(0/*datacenterId*/, 0/*workerId*/);
-
-//Step 2.Get the id (snowflake algorithm)
-//Method 1:
-long id1 = guid.next();
-//Method 2:
-long id2 = LocalGuid.instance().next();
-
-//In addition, the framework also integrates two excellent UUID algorithms
-//Method 1 (FastUUID algorithm):
-String uuid1 = LocalGuid.uuid();
-
-//Method 2 (Improved JDK UUID):
-String uuid2 = LocalGuid.uuid(true/*Whether it is separated by '-'*/, false/*Whether to use top speed mode*/);
-```
-
-### Method 2(recommend*)：Use in conjunction with distributed coordinator ("process identity uniqueness" is automatically maintained)：
-
-```java
-//Step 1.Initialization (only once,using zookeeper as Distributed-Coordinator)
-LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk address*/)
-//Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
-```
-
-### Method 3(Applicable to the same network segment)：Use by identifying the local IP("node identity uniqueness" is automatically maintained) or by specifying the IP：
-
-```java
-//Step 1.Initialization (only once,usually when the application starts)
-//Specify the local IP prefix (in the scenario of multiple network interfaces, pick the correct IP address)
-LocalGuid guid
-= LocalGuid.initWithLocalIp("192.168.1");//currently, only IPV4 is supported
-
-//Or specify the local IP prefix and the IP segment(currently only 'the third segment' is supported)
-= LocalGuid.initWithLocalIp("192.168", 1);//Pick from 192.168.1.*
-
-//Step 2.Get the id(same as 'Step 2 of Method 1', omitted)
-```
+### [How to use the **core library**](stun4j-guid-core/README_en_US.md)
+### How to use the customized **spring-boot-starter**
 
 ## Notes
 1. This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability
