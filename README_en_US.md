@@ -54,7 +54,7 @@ $ mvn clean package
 	* Tests so far shows that Curator **2.13.0** is compatible with **Zookeeper 3.4.10+(server version)**
 	* If you are using **Zookeeper 3.5+(server version)**, you should at least use it with Curator **3.3.0+**
 3. The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
-4. Extra attention should be paid to those using **Method 3** above：
+4. Extra attention should be paid to those directly or indirectly using [**Core library-Method3**](stun4j-guid-core/README_en_US.md)：
     * Although the framework provides a flexible way to pick IP, strictly speaking, only something like the following can ensure global uniqueness：
       ```java
       LocalGuid.initWithLocalIp("192.168", 1);//indicates that IP addresses matching the network segment '192.168.1' are selected from the host
