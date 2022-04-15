@@ -6,7 +6,7 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
-| 1.2.1 | The spring-boot-starter customized for itself is introduced | 04/15/2022 |
+| 1.2.1 | Introduced customized spring-boot-starter | 04/15/2022 |
 | 1.1.6 | Another out-of-box GUID acquisition strategy is introduced, which can automatically obtain the GUID based on the end of the IP address | 03/21/2022 |
 | 1.1.5 | Improved robustness of core components | 01/25/2022 |
 
