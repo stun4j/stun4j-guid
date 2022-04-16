@@ -13,8 +13,7 @@
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
-	<name>Stun4J Guid</name>
-	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
+	<description>Parent pom providing dependency and plugin management for Stun4J Guid projects built with Maven</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>
 
 	<organization>
