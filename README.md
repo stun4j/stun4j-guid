@@ -6,7 +6,7 @@
 
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
-| 1.2.1 | 引入量身定制的spring-boot-starter | 2022/04/15 |
+| 1.2.2 | 引入量身定制的spring-boot-starter | 2022/04/16 |
 | 1.1.6 | 引入另一种开箱即用的GUID获取策略，可根据IP地址末段自动获取GUID | 2022/03/21 |
 | 1.1.5 | 提升了核心组件的健壮性 | 2022/01/25 |
 
@@ -27,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid-core</artifactId>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
 </dependency>
 ```
 #### 或者
@@ -36,7 +36,7 @@
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-guid-spring-boot-starter</artifactId>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
 </dependency>
 ```
 ### 方式2：通过源码构建
