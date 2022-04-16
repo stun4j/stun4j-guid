@@ -61,7 +61,7 @@ stun4j:
     strategy: zk #Strategy:collaborate with zooKeeper(Optional, default: local-ip)
     zk-conn-addr: <your-zk-address,e.g. 192.168.28.161:2181> #The zookeeper address(Optional, default: localhost:2181)
     zk-namespace: <your-zk-namespace> #The zk namespace of the guid(Optional, default: stun4j-guid)
-    ip-start-with: <your-local-ip-prefix,如192.168.28> #Specify the local ip prefix(Optional,if not specified,the local ip is automatically selected)
+    ip-start-with: <your-local-ip-prefix,e.g. 192.168.28> #Specify the local ip prefix(Optional,if not specified,the local ip is automatically selected)
     
 #omitted...
 ```
