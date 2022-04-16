@@ -1,12 +1,12 @@
 # How to use stun4j-guid-spring-boot-starter / [Chinese](README.md)
 
 ## 1. Quick start
-### Use the `@EnableStf` Annotation
-Where the `@SpringBootApplication` annotation is used, the `@EnableStf` annotation is used as follows:
+### Use the `@EnableGuid` Annotation
+Where the `@SpringBootApplication` annotation is used, the `@EnableGuid` annotation is used as follows:
 ```java
 @SpringBootApplication
 @EnableGuid
-//略...
+//omitted...
 public class SampleApplication {
   public static void main(String[] args) {
     SpringApplication.run(SampleApplication.class, args);
@@ -19,11 +19,11 @@ public class SampleApplication {
 public class BizService {
   @Autowired
   LocalGuid guid;
-  //略...
+  //omitted...
   public void doBiz() {
-    //略...
+    //omitted...
     Long id = guid.next();
-    //略...
+    //omitted...
   }
 }
 ```

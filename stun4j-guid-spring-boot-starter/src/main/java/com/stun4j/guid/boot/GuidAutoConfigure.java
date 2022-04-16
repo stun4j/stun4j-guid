@@ -31,6 +31,10 @@ import org.springframework.util.StringUtils;
 
 import com.stun4j.guid.boot.GuidProperties.Strategy;
 import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.LocalZkGuid;
+import com.stun4j.guid.core.ZkGuidNode;
+import com.stun4j.guid.core.utils.Execptions;
+import com.stun4j.guid.core.utils.NetworkUtils;
 
 /**
  * Responsible for initializing Guid from its boot configuration files.
@@ -63,22 +67,46 @@ public class GuidAutoConfigure implements BeanClassLoaderAware, ApplicationConte
     if (!LocalGuid.isAllowInitialization()) {
       LOG.warn("The local-guid has already been initialized, the initialization initiated by Stf was ignored");
     } else {
-      // GuidProperties guidCfg = props.getGuid();// TODO mj:-Dspring. 这种怎么处理
       List<String> guidStrategies;
       if ((guidStrategies = appArgs.getOptionValues("stun4j.guid.strategy")) != null
           && StringUtils.hasText(guidStrategies.get(0))) {
         props.setStrategy(Strategy.valueOf(guidStrategies.get(0).toUpperCase()));
       }
 
+      List<String> ipPres;
       switch (props.getStrategy()) {
         case ZK:
-          appArgs.getOptionValues("stun4j.guid.zk-conn-addr");
-          appArgs.getOptionValues("stun4j.guid.zk-namespace");
-          // LocalZkGuid.init(null, null);
+          String ipPre = null;
+          if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-start-with")) != null
+              && StringUtils.hasText(ipPres.get(0))) {
+            // TODO mj:check ip pattern(very strict)
+            ipPre = ipPres.get(0);
+          } else if (StringUtils.hasText(props.getIpStartWith())) {
+            ipPre = props.getIpStartWith();
+          }
+          String localIp = NetworkUtils.getLocalhost(ipPre);
+          List<String> connStrs = appArgs.getOptionValues("stun4j.guid.zk-conn-addr");
+          List<String> nameSpaces = appArgs.getOptionValues("stun4j.guid.zk-namespace");
+          String connStr = localIp + ":2181", nameSpace = ZkGuidNode.DFT_ZK_NAMESPACE_GUID;
+          if (connStrs != null && StringUtils.hasText((connStrs.get(0)))) {
+            connStr = connStrs.get(0);
+          } else if (StringUtils.hasText(props.getZkConnAddr())) {
+            connStr = props.getZkConnAddr();
+          }
+          if (nameSpaces != null && StringUtils.hasText((nameSpaces.get(0)))) {
+            nameSpace = nameSpaces.get(0);
+          } else if (StringUtils.hasText(props.getZkNamespace())) {
+            nameSpace = props.getZkNamespace();
+          }
+          try {
+            LocalZkGuid.init(connStr, nameSpace, ipPre);
+          } catch (Throwable e) {
+            Execptions.sneakyThrow(e);
+          }
           break;
         case LOCAL_IP:
-          List<String> ipPres;
-          if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-pre")) != null && StringUtils.hasText(ipPres.get(0))) {
+          if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-start-with")) != null
+              && StringUtils.hasText(ipPres.get(0))) {
             // TODO mj:check ip pattern(very strict)
             LocalGuid.initWithLocalIp(ipPres.get(0));
           } else if (StringUtils.hasText(props.getIpStartWith())) {
@@ -90,17 +118,16 @@ public class GuidAutoConfigure implements BeanClassLoaderAware, ApplicationConte
           }
           break;
         case MANUAL:
-          List<String> dcIds = appArgs.getOptionValues("stun4j.guid.dc-id");
-          List<String> wKIds = appArgs.getOptionValues("stun4j.guid.wk-id");
+          List<String> dcIds = appArgs.getOptionValues("stun4j.guid.datacenter-id");
+          List<String> wKIds = appArgs.getOptionValues("stun4j.guid.worker-id");
           int dcId, wkId;
           String warnMsg = "You are running the risk of breaking the global uniqueness of local-guid(Cause you choose the 'manual' strategy) > Consider choose other initialization strategy for local-guid";
           if (dcIds != null || wKIds != null) {
-            dcId = (dcIds == null || "".equals(dcIds.get(0))) ? 0 : Integer.parseInt(dcIds.get(0));
-            wkId = (wKIds == null || "".equals(wKIds.get(0))) ? 0 : Integer.parseInt(wKIds.get(0));
+            dcId = (dcIds == null || !StringUtils.hasText(dcIds.get(0))) ? 0 : Integer.parseInt(dcIds.get(0));
+            wkId = (wKIds == null || !StringUtils.hasText(wKIds.get(0))) ? 0 : Integer.parseInt(wKIds.get(0));
             LocalGuid.init(dcId, wkId);
             LOG.warn(warnMsg);
           } else if ((dcId = props.getDatacenterId()) >= 0 && (wkId = props.getWorkerId()) >= 0) {
-            // TODO mj:test yml placeholder
             LocalGuid.init(dcId, wkId);
             LOG.warn(warnMsg);
           } else {

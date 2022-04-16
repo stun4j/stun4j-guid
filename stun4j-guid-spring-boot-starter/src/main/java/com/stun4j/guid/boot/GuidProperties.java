@@ -23,13 +23,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties("stun4j.guid")
 public class GuidProperties {
+  /** Default: 0 */
   private int datacenterId;
+  /** Default: 0 */
   private int workerId;
   private String ipStartWith;
+  /** Default: local-ip */
   private Strategy strategy = Strategy.LOCAL_IP;
-
-  private String zkConnAddr = "localhost:2181";// TODO mj:使用127.0.0.1?
-  private String zkNamespace = "stun4j-guid";// FIXME mj:使用stun4j-guid的class?使用stun4j-guid的namespace还是自己独有的？
+  /** Default: localhost:2181 */
+  private String zkConnAddr = "localhost:2181";
+  /** Default: stun4j-guid */
+  private String zkNamespace = "stun4j-guid";
 
   public enum Strategy {
     ZK, LOCAL_IP, MANUAL

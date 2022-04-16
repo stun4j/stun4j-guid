@@ -1,5 +1,5 @@
 # How to use core library / [Chinese](README.md)
-## Method 1：Direct use (for applications with a small number of nodes that wish or are capable of maintaining "process or node identity uniqueness" by themselves)：
+## Method 1：Manually specify (for applications with a small number of nodes that wish or are capable of maintaining "process or node identity uniqueness" by themselves)：
 
 ```java
 //Step 1.Initialization (only once,usually when the application starts)
