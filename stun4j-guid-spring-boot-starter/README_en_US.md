@@ -29,7 +29,7 @@ public class BizService {
 ```
 
 ## 2. Configuration detail of `application.yml`
-### 2.1 Configuration corresponding to [**Core library-Method3**](../stun4j-guid-core/README.md)(**Default\***)
+### 2.1 Configuration corresponding to [**Core library-Method3**](../stun4j-guid-core/README_en_US.md)(**Default\***)
 ```yml
 #omitted...
 
@@ -40,7 +40,7 @@ stun4j:
     
 #omitted...
 ```
-### 2.2 Configuration corresponding to [**Core library-Method1**](../stun4j-guid-core/README.md)
+### 2.2 Configuration corresponding to [**Core library-Method1**](../stun4j-guid-core/README_en_US.md)
 ```yml
 #omitted...
 
@@ -52,7 +52,7 @@ stun4j:
     
 #omitted...
 ```
-### 2.3 Configuration corresponding to [**Core library-Method2**](../stun4j-guid-core/README.md)
+### 2.3 Configuration corresponding to [**Core library-Method2**](../stun4j-guid-core/README_en_US.md)
 ```yml
 #omitted...
 
