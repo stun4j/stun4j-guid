@@ -28,7 +28,7 @@ public class BizService {
 ```
 
 ## 2. `application.yml`配置详解
-### 2.1 对应于[**核心库使用-方式3**](stun4j-guid-core/README.md)的配置(**默认\***)
+### 2.1 对应于[**核心库使用-方式3**](../stun4j-guid-core/README.md)的配置(**默认\***)
 ```yml
 #略...
 
@@ -39,7 +39,7 @@ stun4j:
     
 #略...
 ```
-### 2.2 对应于[**核心库使用-方式1**](stun4j-guid-core/README.md)的配置
+### 2.2 对应于[**核心库使用-方式1**](../stun4j-guid-core/README.md)的配置
 ```yml
 #略...
 
@@ -51,7 +51,7 @@ stun4j:
     
 #略...
 ```
-### 2.3 对应于[**核心库使用-方式2**](stun4j-guid-core/README.md)的配置
+### 2.3 对应于[**核心库使用-方式2**](../stun4j-guid-core/README.md)的配置
 ```yml
 #略...
 
