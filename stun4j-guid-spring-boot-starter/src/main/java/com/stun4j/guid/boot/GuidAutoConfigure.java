@@ -15,21 +15,20 @@
  */
 package com.stun4j.guid.boot;
 
+import static com.stun4j.guid.core.utils.Asserts.state;
+
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 import com.stun4j.guid.boot.GuidProperties.Strategy;
+import com.stun4j.guid.boot.support.CuratorVersion;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.LocalZkGuid;
 import com.stun4j.guid.core.ZkGuidNode;
@@ -42,24 +41,12 @@ import com.stun4j.guid.core.utils.NetworkUtils;
  */
 @Configuration
 @EnableConfigurationProperties(GuidProperties.class)
-public class GuidAutoConfigure implements BeanClassLoaderAware, ApplicationContextAware {
+public class GuidAutoConfigure {
   private static final Logger LOG = LoggerFactory.getLogger(GuidAutoConfigure.class);
 
   @Bean
   LocalGuid localGuid() {
     return LocalGuid.instance();
-  }
-
-  @Override
-  public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setBeanClassLoader(ClassLoader classLoader) {
-    // TODO Auto-generated method stub
-
   }
 
   GuidAutoConfigure(GuidProperties props, ApplicationArguments appArgs) {
@@ -76,6 +63,13 @@ public class GuidAutoConfigure implements BeanClassLoaderAware, ApplicationConte
       List<String> ipPres;
       switch (props.getStrategy()) {
         case ZK:
+          String curatorVer = CuratorVersion.getVersion();
+          String advice = "Please check 'https://github.com/stun4j/stun4j-guid/blob/master/README_en_US.md#notes' for detail.";
+          state(curatorVer != null,
+              "You must placed 'org.apache.curator:curator-recipes:2.13.0 or 3.3.0+' in your project's classpath,or you can't communicate with zk. "
+                  + advice);
+          LOG.info("Your 'curator-recipes' version is {},the recommended version is 2.13.0 or 3.3.0+. {}", curatorVer,
+              advice);
           String ipPre = null;
           if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-start-with")) != null
               && StringUtils.hasText(ipPres.get(0))) {
