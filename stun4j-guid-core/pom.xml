@@ -8,8 +8,8 @@
 	</parent>
 	<artifactId>stun4j-guid-core</artifactId>
 
-  <description>Global unique id generator,distributed,ultra fast,easy to use</description>
-  <url>https://github.com/stun4j/stun4j-guid</url>
+	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
+	<url>https://github.com/stun4j/stun4j-guid</url>
 
 	<properties>
 		<curator.version>2.13.0</curator.version>
@@ -104,9 +104,6 @@
 	<profiles>
 		<profile>
 			<id>dev-zk34</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
 			<properties>
 				<!-- zk server 3.4.14- supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
 				<curator.version>2.13.0</curator.version>

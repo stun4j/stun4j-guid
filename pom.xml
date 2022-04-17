@@ -57,7 +57,7 @@
 	</modules>
 
 	<properties>
-		<revision>1.2.2</revision>
+		<revision>1.2.3-SNAPSHOT</revision>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
 
@@ -151,8 +151,42 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<profiles>
+		<!-- development -->
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<id>nexus-aliyun</id>
+					<name>Nexus aliyun</name>
+					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<id>nexus-aliyun</id>
+					<name>Nexus aliyun</name>
+					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+		<!-- production -->
 		<profile>
 			<id>release-sign-artifacts</id>
 			<activation>
