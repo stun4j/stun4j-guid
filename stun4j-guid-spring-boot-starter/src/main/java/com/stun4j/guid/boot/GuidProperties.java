@@ -23,16 +23,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties("stun4j.guid")
 public class GuidProperties {
-  /** Default: 0 */
   private int datacenterId;
-  /** Default: 0 */
   private int workerId;
   private String ipStartWith;
   /** Default: local-ip */
   private Strategy strategy = Strategy.LOCAL_IP;
-  /** Default: localhost:2181 */
   private String zkConnAddr = "localhost:2181";
-  /** Default: stun4j-guid */
   private String zkNamespace = "stun4j-guid";
 
   public enum Strategy {
