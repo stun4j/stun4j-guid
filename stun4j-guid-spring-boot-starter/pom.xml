@@ -8,6 +8,7 @@
 	</parent>
 	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-guid-spring-boot-starter</artifactId>
+  <name>Stun4J Guid Spring Boot Starter</name>
 
 	<description>Starter for using Stun4J Guid</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>

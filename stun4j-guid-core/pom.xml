@@ -7,6 +7,7 @@
 		<version>${revision}</version>
 	</parent>
 	<artifactId>stun4j-guid-core</artifactId>
+	<name>Stun4J Guid Core</name>
 
 	<description>Global unique id generator,distributed,ultra fast,easy to use</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>
