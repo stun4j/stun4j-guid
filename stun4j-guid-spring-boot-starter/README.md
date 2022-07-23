@@ -12,7 +12,7 @@ public class SampleApplication {
   }
 }
 ```
-### 通过注入的core-api，在用户（业务）代码中获取guid
+### 通过注入的core-api，在业务代码中获取guid
 ```java
 @Service
 public class BizService {

@@ -44,7 +44,7 @@
 ```shell
 $ mvn clean package
 ```
-会在各自的target目录中生成`stun4j-guid-core-<version>.jar`和`stun4j-guid-spring-boot-starter-<version>.jar`，放入你工程的classpath即可
+构建完成后，会在各自的target目录中生成`stun4j-guid-core-<version>.jar`和`stun4j-guid-spring-boot-starter-<version>.jar`，放入你工程的classpath即可。spring-boot工程仅需要`boot-starter`这个jar，如果你希望通过low-level api的方式来使用Guid，那么你可以了解并使用`core`这个jar。
 
 ## 如何使用
 ### [**核心库**如何使用](stun4j-guid-core/README.md)
@@ -89,7 +89,7 @@ $ mvn clean package
 ## 参与
 * 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
 * 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
-* 不吝赐:star2:
+* 不吝赐 :star2:
 
 ## 感谢
 *  极速UUID算法使用了fast-uuid这个[项目](https://github.com/codahale/fast-uuid)

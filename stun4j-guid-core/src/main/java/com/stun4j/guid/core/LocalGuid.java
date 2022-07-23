@@ -134,16 +134,16 @@ public final class LocalGuid {
 
   public synchronized long next() {
     long timestamp = currentTimeMs();
-    // handle time clock backwards(coz NTP is not safe)
+    // handle retrograde clock change(coz NTP is not safe)
     if (timestamp < this.lastTimestamp) {
       long timeLagMs = this.lastTimestamp - timestamp;
       if (timeLagMs >= 5000) {// TODO mj:5000->config
-        String msg = lenientFormat("Clock moving backwards detected,too much time lag [lag=%sms]",
+        String msg = lenientFormat("Retrograde clock change detected,too much time lag [lag=%sms]",
             lastTimestamp - timestamp);
         LOG.error(msg);
         throw new RuntimeException(msg);
       }
-      LOG.warn("Clock moving backwards detected [time lag={}ms],try self-healing now...", timeLagMs);
+      LOG.warn("Retrograde clock change detected [time lag={}ms],try self-healing now...", timeLagMs);
       Pair<Long, Long> rtn = Utils.timeAwareRun(timeMsToChase -> {
         long curTimeMsChasing;
         // TODO mj:use random sleep time to reduce cpu cost
@@ -159,7 +159,7 @@ public final class LocalGuid {
         }
         return curTimeMsChasing;
       }, timeLagMs);
-      LOG.info("Self healed from clock moving backwards, cost {}ms", rtn.getLeft());
+      LOG.info("Self healed from retrograde clock changing, cost {}ms", rtn.getLeft());
       // now we've got timestamp chased
       timestamp = rtn.getRight();
     }
