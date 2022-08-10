@@ -205,7 +205,7 @@ public class LocalGuid {
   }
 
   public final long getTimeMsFromId(long idExpectingSameEpoch) {
-    // TODO mj:If bit-editing is available, don't forget that this may need to change as wel
+    // TODO mj:If bit-editing is available, don't forget that this may need to change as well
     return (idExpectingSameEpoch >> timestampShift & ~(-1L << 41L)) + this.epoch;
   }
   // <-
@@ -270,8 +270,8 @@ public class LocalGuid {
         if (fixedDigitsEnabled) {
           long idTry = instance.next();
           Consumer<Integer> assertDigits = expectedDigits -> {
-            state(digits == expectedDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]", expectedDigits,
-                NumberFormat.getInstance().format(idTry));
+            state(digits == expectedDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]",
+                expectedDigits, NumberFormat.getInstance().format(idTry));
           };
           if (idTry >= 10000_00000_00000L && idTry <= 99999_99999_99999L) {
             assertDigits.accept(15);
@@ -390,7 +390,9 @@ public class LocalGuid {
 
     Date maxDate;
     Date nowDate;
-    state((maxDate = new Date(epoch + maxDeltaMs)).compareTo(nowDate = new Date()) > 0,
+    state(
+        (maxDate = new Date(epoch + (!fixedDigitsEnabled ? maxDeltaMs : maxDeltaMs - minDeltaMs)))
+            .compareTo(nowDate = new Date()) > 0,
         "A good id time-factor date should be much later than current date [max-date=%s, current-date=%s]", maxDate,
         nowDate);
     long delta = maxDate.getTime() - nowDate.getTime();
@@ -398,8 +400,11 @@ public class LocalGuid {
         "A good id time-factor date should be at least 5 years later than current date [max-date=%s, current-date=%s]",
         maxDate, nowDate);
     LOG.info(
-        "\n--- Guid initialization additional information ---\nTheoretical tps: {}\nTheoretical max-date: {}\nTheoretical min-date: {}\n--------------------------------------------------\n",
-        (1 << seqBitsNum) * 1000, maxDate, new Date(epoch + minDeltaMs));
+        "\n--- Guid initialization additional information ---\nTheoretical tps: {}\nTheoretical max-date: {}\n     Actual max-date: {}\nTheoretical min-date: {}\n--------------------------------------------------\n",
+        (1 << seqBitsNum) * 1000, //
+        !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs), //
+        maxDate, //
+        new Date(epoch + minDeltaMs));
   }
 
   public final long getEpoch() {
