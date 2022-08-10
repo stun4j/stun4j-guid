@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Calendar;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,6 +52,13 @@ public final class Utils {
     long start = System.currentTimeMillis();
     R rtn = fn.apply(arg);
     return Pair.of(System.currentTimeMillis() - start, rtn);
+  }
+
+  public static long yearsLongMillis(int years) {
+    Calendar cal = Calendar.getInstance();
+    cal.setTimeInMillis(0);
+    cal.add(Calendar.YEAR, years);
+    return cal.getTimeInMillis();
   }
 
   /**

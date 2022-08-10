@@ -16,7 +16,7 @@
 package com.stun4j.guid.core;
 
 import static com.stun4j.guid.core.utils.Asserts.state;
-import static com.stun4j.guid.core.utils.Execptions.sneakyThrow;
+import static com.stun4j.guid.core.utils.Exceptions.sneakyThrow;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;

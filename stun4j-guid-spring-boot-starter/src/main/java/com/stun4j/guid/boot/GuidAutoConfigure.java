@@ -32,7 +32,7 @@ import com.stun4j.guid.boot.support.CuratorVersion;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.LocalZkGuid;
 import com.stun4j.guid.core.ZkGuidNode;
-import com.stun4j.guid.core.utils.Execptions;
+import com.stun4j.guid.core.utils.Exceptions;
 import com.stun4j.guid.core.utils.NetworkUtils;
 
 /**
@@ -95,7 +95,7 @@ public class GuidAutoConfigure {
           try {
             LocalZkGuid.init(connStr, nameSpace, ipPre);
           } catch (Throwable e) {
-            Execptions.sneakyThrow(e);
+            Exceptions.sneakyThrow(e);
           }
           break;
         case LOCAL_IP:

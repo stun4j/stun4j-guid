@@ -24,7 +24,7 @@ package com.stun4j.guid.core.utils;
 /**
  * from lombok
  */
-public class Execptions {
+public class Exceptions {
   /**
    * Throws any throwable 'sneakily' - you don't need to catch it, nor declare that you throw it onwards. The exception
    * is still thrown - javac will just stop whining about it.
@@ -48,7 +48,7 @@ public class Execptions {
   public static RuntimeException sneakyThrow(Throwable t) {
     if (t == null)
       throw new NullPointerException("t");
-    Execptions.<RuntimeException>sneakyThrow0(t);
+    Exceptions.<RuntimeException>sneakyThrow0(t);
     return null;
   }
 

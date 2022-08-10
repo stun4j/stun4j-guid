@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
-import com.stun4j.guid.core.utils.Execptions;
+import com.stun4j.guid.core.utils.Exceptions;
 
-public class ExecptionsTest {
+public class ExceptionsTest {
   @Test
   public void checkedExceptionTest() {
     // assertThatExceptionOfType(Exception.class).isThrownBy(() -> checkedException());
@@ -63,7 +63,7 @@ public class ExecptionsTest {
     try {
       throw new Exception("ce");
     } catch (Throwable t) {
-      throw Execptions.sneakyThrow(t);
+      throw Exceptions.sneakyThrow(t);
     }
   }
 
@@ -71,7 +71,7 @@ public class ExecptionsTest {
     try {
       throw new RuntimeException("re");
     } catch (Throwable t) {
-      throw Execptions.sneakyThrow(t);
+      throw Exceptions.sneakyThrow(t);
     }
   }
 
@@ -79,7 +79,7 @@ public class ExecptionsTest {
     try {
       throw new OutOfMemoryError("er");
     } catch (Throwable t) {
-      throw Execptions.sneakyThrow(t);
+      throw Exceptions.sneakyThrow(t);
     }
   }
 }
