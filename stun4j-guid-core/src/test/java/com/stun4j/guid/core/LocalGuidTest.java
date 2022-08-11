@@ -30,12 +30,14 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.Sets;
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.guid.core.utils.Utils.Pair;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalGuidTest {
+  static {
+    LocalGuid._show_initialization_report = false;
+  }
 
   @Before
   public void mockReset() {
@@ -148,7 +150,7 @@ public class LocalGuidTest {
     try (Scanner scanner = new Scanner(new File("logs-test/info.log")).useDelimiter("\n")) {
       int times = 0;
       while (scanner.hasNext()) {
-        if (scanner.next().contains("INFO (")) {
+        if (scanner.next().contains("The local-guid is successfully initialized")) {
           times++;
         }
       }

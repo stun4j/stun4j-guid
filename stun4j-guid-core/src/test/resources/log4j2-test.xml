@@ -81,10 +81,10 @@
 		</Console>
 	</Appenders>
 	<Loggers>
-		<!-- <Logger name="com.stun4j.guid" level="DEBUG" includeLocation="true" additivity="false"> -->
-		<!-- <AppenderRef ref="CONSOLE-DEBUG" /> -->
-		<!-- <AppenderRef ref="FILE-DEBUG" /> -->
-		<!-- </Logger> -->
+<!-- 		<Logger name="com.stun4j.guid.core" level="DEBUG" includeLocation="true" additivity="false"> -->
+<!-- 			<AppenderRef ref="CONSOLE-DEBUG" /> -->
+<!-- 			<AppenderRef ref="FILE-DEBUG" /> -->
+<!-- 		</Logger> -->
 
 		<Root level="INFO" includeLocation="false">
 			<AppenderRef ref="CONSOLE-INFO" />

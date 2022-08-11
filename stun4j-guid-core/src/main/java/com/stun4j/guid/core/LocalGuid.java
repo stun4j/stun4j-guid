@@ -17,7 +17,6 @@ package com.stun4j.guid.core;
 
 import static com.stun4j.guid.core.utils.Asserts.argument;
 import static com.stun4j.guid.core.utils.Asserts.notNull;
-import static com.stun4j.guid.core.utils.Asserts.state;
 import static com.stun4j.guid.core.utils.Strings.lenientFormat;
 
 import java.security.SecureRandom;
@@ -46,6 +45,10 @@ import com.stun4j.guid.core.utils.Utils.Pair;
  */
 public class LocalGuid {
   private static final Logger LOG = LoggerFactory.getLogger(LocalGuid.class);
+
+  public static boolean _show_initialization_report = true;
+  public static boolean _max_node_limited = true;
+  public static int _limited_max_node = 2048;
 
   private static final AtomicReference<LocalGuid> INSTANCE = new AtomicReference<>();
   private static final UUIDFast UUID_FAST = new UUIDFast(new SecureRandom());
@@ -262,16 +265,13 @@ public class LocalGuid {
           cur = guidClz.getDeclaredConstructor(int.class, long.class, long.class, long.class, boolean.class)
               .newInstance(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled))) {
         LocalGuid instance = cur.doCoreInit(datacenterId, workerId);
-        LOG.info(
-            "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBitsNum={}, wkIdBitsNum={}, seqBitsNum={}, fixedDigits={}]",
-            datacenterId, workerId, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
 
-        // An immediate fixed-digits test(this is a post-assertion and may not be necessary)
+        // An immediate fixed-digits test
         if (fixedDigitsEnabled) {
           long idTry = instance.next();
-          Consumer<Integer> assertDigits = expectedDigits -> {
-            state(digits == expectedDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]",
-                expectedDigits, NumberFormat.getInstance().format(idTry));
+          Consumer<Integer> assertDigits = actualDigits -> {
+            argument(digits == actualDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]",
+                digits, NumberFormat.getInstance().format(idTry));
           };
           if (idTry >= 10000_00000_00000L && idTry <= 99999_99999_99999L) {
             assertDigits.accept(15);
@@ -283,8 +283,14 @@ public class LocalGuid {
             assertDigits.accept(18);
           } else if (idTry >= 10000_00000_00000_0000L && idTry <= Long.MAX_VALUE) {
             assertDigits.accept(19);
+          } else {
+            throw new IllegalArgumentException("The local-guid digits range can only be [15,19], but the actual id was "
+                + NumberFormat.getInstance().format(idTry));
           }
         }
+        LOG.info(
+            "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBitsNum={}, wkIdBitsNum={}, seqBitsNum={}, fixedDigits={}]",
+            datacenterId, workerId, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
         return instance;
       }
     } catch (Throwable t) {
@@ -351,13 +357,6 @@ public class LocalGuid {
   }
 
   LocalGuid(int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled) {
-    this.datacenterIdBitsNum = datacenterIdBitsNum;
-    this.workerIdBitsNum = workerIdBitsNum;
-    this.seqBitsNum = seqBitsNum;
-    this.workerIdShift = seqBitsNum;
-    this.datacenterIdShift = seqBitsNum + workerIdBitsNum;
-    this.seqMask = ~(-1L << seqBitsNum);
-    this.fixedDigitsEnabled = fixedDigitsEnabled;
     long idMaxVal;
     long idMinVal;
     switch (digits) {
@@ -384,27 +383,47 @@ public class LocalGuid {
       default:
         throw new IllegalArgumentException("The local-guid digits range can only be [15,19]");
     }
+    argument(datacenterIdBitsNum > 0, "The local-guid datacenterIdBitsNum must be greater than 0");
+    argument(workerIdBitsNum > 0, "The local-guid workerIdBitsNum must be greater than 0");
+    argument(seqBitsNum > 0, "The local-guid seqBitsNum must be greater than 0");
+
+    this.datacenterIdBitsNum = datacenterIdBitsNum;
+    this.workerIdBitsNum = workerIdBitsNum;
+    this.seqBitsNum = seqBitsNum;
+    this.workerIdShift = seqBitsNum;
+    this.datacenterIdShift = seqBitsNum + workerIdBitsNum;
+    this.seqMask = ~(-1L << seqBitsNum);
+    this.fixedDigitsEnabled = fixedDigitsEnabled;
     long timestampShift = this.timestampShift = seqBitsNum + workerIdBitsNum + datacenterIdBitsNum;
     this.maxDeltaMs = idMaxVal >> timestampShift;
     this.minDeltaMs = idMinVal >> timestampShift;
 
     Date maxDate;
     Date nowDate;
-    state(
+    int maxNode = 1 << (datacenterIdBitsNum + workerIdBitsNum);
+    argument(
         (maxDate = new Date(epoch + (!fixedDigitsEnabled ? maxDeltaMs : maxDeltaMs - minDeltaMs)))
             .compareTo(nowDate = new Date()) > 0,
         "A good id time-factor date should be much later than current date [max-date=%s, current-date=%s]", maxDate,
         nowDate);
     long delta = maxDate.getTime() - nowDate.getTime();
-    state(delta >= Utils.yearsLongMillis(5),
+    argument(delta >= Utils.yearsLongMillis(5),
         "A good id time-factor date should be at least 5 years later than current date [max-date=%s, current-date=%s]",
         maxDate, nowDate);
-    LOG.info(
-        "\n--- Guid initialization additional information ---\nTheoretical tps: {}\nTheoretical max-date: {}\n     Actual max-date: {}\nTheoretical min-date: {}\n--------------------------------------------------\n",
-        (1 << seqBitsNum) * 1000, //
-        !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs), //
-        maxDate, //
-        new Date(epoch + minDeltaMs));
+    if (_max_node_limited) {
+      argument(maxNode <= _limited_max_node,
+          "The max-node can't be greater than %s > The sum of DC-bit and WK-bit cannot exceed %s", _limited_max_node,
+          Integer.toBinaryString(_limited_max_node).length() - 1);
+    }
+
+    if (!_show_initialization_report) return;
+    LOG.info("--- Stun4J Guid initialization additional information ---");
+    LOG.info("Theoretical tps: {}", (1 << seqBitsNum) * 1000);
+    LOG.info("Theoretical max-date: {}", !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs));
+    LOG.info("     Actual max-date: {}", maxDate);
+    LOG.info("Theoretical min-date: {}", new Date(epoch + minDeltaMs));// TODO mj:consider non-fixed-digits
+    LOG.info("Theoretical max-node: {}", maxNode);
+    LOG.info("---------------------------------------------------------");
   }
 
   public final long getEpoch() {
