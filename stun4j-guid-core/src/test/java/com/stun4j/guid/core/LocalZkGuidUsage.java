@@ -20,7 +20,8 @@ import com.stun4j.guid.core.utils.Utils;
 public class LocalZkGuidUsage {
 
   public static void main(String[] args) throws Exception {
-    LocalGuid guid = LocalZkGuid.init("localhost:2181");
+    // LocalGuid solo = LocalGuid.init(0, 1, 15, 1, 1, 6, false);
+    LocalGuid guid = LocalZkGuid.init("localhost:2181", null, 15, 1, 1, 6, false, null);
     long id = guid.next();
     System.out.println(id);
 

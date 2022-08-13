@@ -48,7 +48,7 @@ public class LocalGuid {
 
   public static boolean _show_initialization_report = true;
   public static boolean _max_node_limited = true;
-  public static int _limited_max_node = 2048;
+  public static int _limited_max_node = 1024;
 
   private static final AtomicReference<LocalGuid> INSTANCE = new AtomicReference<>();
   private static final UUIDFast UUID_FAST = new UUIDFast(new SecureRandom());
@@ -62,6 +62,7 @@ public class LocalGuid {
   private final long seqMask;
   private final long maxDeltaMs;
   private final long minDeltaMs;
+  private final int maxNode;
 
   // Fri Feb 14 16:12:19 CST 2020
   private final long epoch = 1581667939311L;
@@ -357,6 +358,11 @@ public class LocalGuid {
   }
 
   LocalGuid(int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled) {
+    this(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, _show_initialization_report);
+  }
+
+  LocalGuid(int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled,
+      boolean showReport) {
     long idMaxVal;
     long idMinVal;
     switch (digits) {
@@ -400,7 +406,7 @@ public class LocalGuid {
 
     Date maxDate;
     Date nowDate;
-    int maxNode = 1 << (datacenterIdBitsNum + workerIdBitsNum);
+    int maxNode = this.maxNode = 1 << (datacenterIdBitsNum + workerIdBitsNum);
     argument(
         (maxDate = new Date(epoch + (!fixedDigitsEnabled ? maxDeltaMs : maxDeltaMs - minDeltaMs)))
             .compareTo(nowDate = new Date()) > 0,
@@ -416,7 +422,7 @@ public class LocalGuid {
           Integer.toBinaryString(_limited_max_node).length() - 1);
     }
 
-    if (!_show_initialization_report) return;
+    if (!showReport) return;
     LOG.info("--- Stun4J Guid initialization additional information ---");
     LOG.info("Theoretical tps: {}", (1 << seqBitsNum) * 1000);
     LOG.info("Theoretical max-date: {}", !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs));
@@ -438,8 +444,20 @@ public class LocalGuid {
     return workerId;
   }
 
+  public final long getDatacenterIdBitsNum() {
+    return datacenterIdBitsNum;
+  }
+
+  public final long getWorkerIdBitsNum() {
+    return workerIdBitsNum;
+  }
+
   public final long getSeqBitsNum() {
     return seqBitsNum;
+  }
+
+  public final int getMaxNode() {
+    return maxNode;
   }
 
   final long getMaxDeltaMs() {

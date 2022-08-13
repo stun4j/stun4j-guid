@@ -49,6 +49,7 @@ import com.stun4j.guid.core.utils.Utils.Triple;
 public abstract class ZkGuidNode {
   private static final Logger LOG = LoggerFactory.getLogger(ZkGuidNode.class);
   public static final String DFT_ZK_NAMESPACE_GUID = "stun4j-guid";
+  private static final int MAX_NUM_OF_WORKER_NODE = 1024;
   private static final String ZK_NODES_PATH_ROOT = "/nodes";
   private static final String ZK_LOCK_PATH_ROOT = "/lock";
   private static final AtomicBoolean STARTED = new AtomicBoolean(false);
@@ -69,32 +70,19 @@ public abstract class ZkGuidNode {
 
   public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
       String zkNamespace, String ipStartWith) throws Exception {
-    return start(zkConnectStr, onReconnect, zkNamespace, 19, 5, 5, 12, false, ipStartWith);
-  }
-
-  public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
-      String zkNamespace, int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum,
-      boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
     // TODO mj:config
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000).retryPolicy(retryPolicy)
         .namespace(Optional.ofNullable(zkNamespace).orElse(DFT_ZK_NAMESPACE_GUID));
-    return start(clientBuilder, onReconnect, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum,
-        fixedDigitsEnabled, ipStartWith);
+    return start(clientBuilder, onReconnect, ipStartWith);
   }
 
+  // private static final AtomicInteger reconnectEpoch = new AtomicInteger(0);
+  // private static final AtomicInteger reconnectRetryTimes = new AtomicInteger(0);
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
-      String ipStartWith) throws Exception {
-    return start(zkClientBuilder, onReconnect, 19, 5, 5, 12, false, ipStartWith);
-  }
-
-  public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
-      int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled,
       String ipStartWith) throws Exception {
     state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
-    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled,
-        false);
     client = zkClientBuilder.build();
     client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
       @Override
@@ -122,7 +110,7 @@ public abstract class ZkGuidNode {
                 reconnectRetryTimes = 0;// TODO mj:behavior->config
               }
               try {
-                Pair<Integer, Integer> newNodeInfo = coreProcess(preCheck, ipStartWith, client, true);
+                Pair<Integer, Integer> newNodeInfo = coreProcess(ipStartWith, client, true);
                 onReconnect.accept(newNodeInfo);
                 break;
               } catch (Throwable e) {
@@ -142,7 +130,7 @@ public abstract class ZkGuidNode {
     try {
       client.start();
 
-      return coreProcess(preCheck, ipStartWith, client, false);
+      return coreProcess(ipStartWith, client, false);
 
     } catch (Throwable e) {
       Utils.closeQuietly(client);
@@ -150,8 +138,8 @@ public abstract class ZkGuidNode {
     }
   }
 
-  private static Pair<Integer, Integer> coreProcess(LocalGuid proto, String ipStartWith, CuratorFramework client,
-      boolean reconnect) throws Exception {
+  private static Pair<Integer, Integer> coreProcess(String ipStartWith, CuratorFramework client, boolean reconnect)
+      throws Exception {
     String processName = ManagementFactory.getRuntimeMXBean().getName();
     String processId = processName.substring(0, processName.indexOf('@'));
     String selfIp = NetworkUtils.getLocalhost(ipStartWith);
@@ -174,9 +162,7 @@ public abstract class ZkGuidNode {
     } finally {
       client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
     }
-    int maxNode = proto.getMaxNode();
-    long dcIdBitsNum = proto.getDatacenterIdBitsNum();
-    long wkIdBitsNum = proto.getWorkerIdBitsNum();
+
     /*
      * use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
      * limited
@@ -191,19 +177,19 @@ public abstract class ZkGuidNode {
               LOG.warn("Might be the first initialization? [suspected error: {}]", e.getMessage());
               snapshotAllNodes = new ArrayList<>();
             }
-            state(snapshotAllNodes.size() < maxNode, "Number of worker-node over limited [max-node=%s]", maxNode);
+            state(snapshotAllNodes.size() < MAX_NUM_OF_WORKER_NODE, "Number of worker-node over limited [max=%s]",
+                MAX_NUM_OF_WORKER_NODE);
 
             ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
                 .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
-            Pair<Integer, String> rtnNodeInfo = createGuidNode(dataWriter, snapshotAllNodes, selfNodeFullPath, maxNode,
-                0);
-            int rtnNodeId = rtnNodeInfo.getKey();
-            String realNodeFullPath = rtnNodeInfo.getValue();
-            state(rtnNodeId >= 0 && rtnNodeId < maxNode, "Wrong guid-node-id [nodeId=%s]", rtnNodeId);
+            String realNodeFullPath = dataWriter.forPath(selfNodeFullPath, null);
+            int rtnNodeId = calculateNodeIdFrom(realNodeFullPath);
+            state(rtnNodeId >= 0 && rtnNodeId < MAX_NUM_OF_WORKER_NODE, "Wrong guid-node-id [nodeId=%s]", rtnNodeId);
 
-            int datacenterId = (rtnNodeId) >> (int)dcIdBitsNum;
-            int workerId = (int)(rtnNodeId & ~(-1L << wkIdBitsNum));
-
+            // TODO mj:If bit-editing is available, don't forget that this may need to change as well->
+            int datacenterId = (rtnNodeId) >> 5;
+            int workerId = (int)(rtnNodeId & ~(-1L << 5L));
+            // <-
             LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !reconnect ? "" : "re",
                 datacenterId, workerId, realNodeFullPath);
 
@@ -218,24 +204,9 @@ public abstract class ZkGuidNode {
     return resultOfCoreProcess.getLeft();
   }
 
-  static Pair<Integer, String> createGuidNode(ACLBackgroundPathAndBytesable<String> dataWriter,
-      List<String> snapshotAllNodes, String nodeCoreZkPath, int maxNode, int tryTimes) throws Exception {
-    state(tryTimes <= maxNode, "Times of retry over limited [max-retry-times=%s]", maxNode);
-
-    String nodeZkPath = dataWriter.forPath(nodeCoreZkPath, null);
-    String last10 = nodeZkPath.substring(nodeZkPath.length() - 10);// TODO mj:always 10d?
-    int nodeId = (int)(Long.parseLong(last10) % maxNode);
-    boolean foundDuplicate = snapshotAllNodes.stream().anyMatch(path -> nodeId == calculateNodeIdFrom(path, maxNode));
-    if (foundDuplicate) {
-      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeZkPath);// TODO mj:error handle
-      return createGuidNode(dataWriter, snapshotAllNodes, nodeCoreZkPath, maxNode, ++tryTimes);
-    }
-    return Pair.of(nodeId, nodeZkPath);
-  }
-
-  static int calculateNodeIdFrom(String nodeZkPath, int maxNode) {
-    String last10 = nodeZkPath.substring(nodeZkPath.length() - 10);// TODO mj:always 10d?
-    int rtnNodeId = (int)(Long.parseLong(last10) % maxNode);
+  static int calculateNodeIdFrom(String nodeFullPath) {
+    String last10 = nodeFullPath.substring(nodeFullPath.length() - 10);// TODO mj:always 10d?
+    int rtnNodeId = (int)(Long.parseLong(last10) % MAX_NUM_OF_WORKER_NODE);
     return rtnNodeId;
   }
 
@@ -244,8 +215,7 @@ public abstract class ZkGuidNode {
    * <p>
    * in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
    * <p>
-   * so for the purpose, more efficient use of '{max-node}-limit', we need to clean-up the old path, after we've got a
-   * success
+   * so for the purpose, more efficient use of '1024-limit', we need to clean-up the old path, after we've got a success
    * node-assignment(which means a new node-path generated)
    */
   private static void doCleanUp(CuratorFramework client, String selfNodePath,

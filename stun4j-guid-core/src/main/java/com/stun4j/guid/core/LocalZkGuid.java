@@ -15,6 +15,8 @@
  */
 package com.stun4j.guid.core;
 
+import java.util.function.Consumer;
+
 import org.apache.curator.framework.CuratorFrameworkFactory.Builder;
 
 import com.stun4j.guid.core.utils.Utils.Pair;
@@ -33,16 +35,36 @@ public class LocalZkGuid {
   }
 
   public static LocalGuid init(String zkConnectStr, String zkNamespace, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, nodeNewInfo -> {
-      LocalGuid.instance().reset(nodeNewInfo);
-    }, zkNamespace, ipStartWith);
-    return LocalGuid.init(nodeInfo);
+    return init(zkConnectStr, zkNamespace, 19, 5, 5, 12, false, ipStartWith);
   }
 
   public static LocalGuid init(Builder zkClientBuilder, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, nodeNewInfo -> {
-      LocalGuid.instance().reset(nodeNewInfo);
-    }, ipStartWith);
-    return LocalGuid.init(nodeInfo);
+    return init(zkClientBuilder, 19, 5, 5, 12, false, ipStartWith);
+  }
+
+  private static final Consumer<Pair<Integer, Integer>> ON_RECONNECT_FN = nodeNewInfo -> {
+    LocalGuid.instance().reset(nodeNewInfo);
+  };
+
+  public static LocalGuid init(String zkConnectStr, String zkNamespace, int digits, long datacenterIdBitsNum,
+      long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, ON_RECONNECT_FN, zkNamespace, digits,
+        datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, ipStartWith);
+
+    return doInit(nodeInfo, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
+  }
+
+  public static LocalGuid init(Builder zkClientBuilder, int digits, long datacenterIdBitsNum, long workerIdBitsNum,
+      long seqBitsNum, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, ON_RECONNECT_FN, digits, datacenterIdBitsNum,
+        workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, ipStartWith);
+
+    return doInit(nodeInfo, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
+  }
+
+  private static LocalGuid doInit(Pair<Integer, Integer> nodeInfo, int digits, long datacenterIdBitsNum, long workerIdBitsNum,
+      long seqBitsNum, boolean fixedDigitsEnabled) {
+    return LocalGuid.init(nodeInfo.getLeft(), nodeInfo.getRight(), digits, datacenterIdBitsNum, workerIdBitsNum,
+        seqBitsNum, fixedDigitsEnabled);
   }
 }
