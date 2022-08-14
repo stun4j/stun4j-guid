@@ -52,7 +52,6 @@ public abstract class ZkGuidNode {
   private static final String ZK_NODES_PATH_ROOT = "/nodes";
   private static final String ZK_LOCK_PATH_ROOT = "/lock";
   private static final AtomicBoolean STARTED = new AtomicBoolean(false);
-  // TODO mj:registry abstraction extract,prevent curator coupling
   private static CuratorFramework client = null;
 
   private static int reconnectRetryTimes = 0;
@@ -150,7 +149,7 @@ public abstract class ZkGuidNode {
     }
   }
 
-  private static Pair<Integer, Integer> coreProcess(LocalGuid proto, String ipStartWith, CuratorFramework client,
+  private static Pair<Integer, Integer> coreProcess(LocalGuid preChecked, String ipStartWith, CuratorFramework client,
       boolean reconnect) throws Exception {
     String processName = ManagementFactory.getRuntimeMXBean().getName();
     String processId = processName.substring(0, processName.indexOf('@'));
@@ -174,11 +173,11 @@ public abstract class ZkGuidNode {
     } finally {
       client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
     }
-    int maxNode = proto.getMaxNode();
-    long dcIdBitsNum = proto.getDatacenterIdBitsNum();
-    long wkIdBitsNum = proto.getWorkerIdBitsNum();
+    int maxNode = preChecked.getMaxNode();
+    long dcIdBitsNum = preChecked.getDatacenterIdBitsNum();
+    long wkIdBitsNum = preChecked.getWorkerIdBitsNum();
     /*
-     * use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
+     * Use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
      * limited
      */
     Triple<Pair<Integer, Integer>, List<String>, String> resultOfCoreProcess = ZkLocks
@@ -195,19 +194,18 @@ public abstract class ZkGuidNode {
 
             ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
                 .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
-            Pair<Integer, String> rtnNodeInfo = createGuidNode(dataWriter, snapshotAllNodes, selfNodeFullPath, maxNode,
-                0);
-            int rtnNodeId = rtnNodeInfo.getKey();
-            String realNodeFullPath = rtnNodeInfo.getValue();
-            state(rtnNodeId >= 0 && rtnNodeId < maxNode, "Wrong guid-node-id [nodeId=%s]", rtnNodeId);
+            Pair<Integer, String> nodeInfo = doCreateZkNode(dataWriter, snapshotAllNodes, selfNodeFullPath, maxNode, 0);
+            int nodeId = nodeInfo.getKey();
+            String nodeZkPath = nodeInfo.getValue();
+            state(nodeId >= 0 && nodeId < maxNode, "Wrong guid-node-id [nodeId=%s]", nodeId);
 
-            int datacenterId = (rtnNodeId) >> (int)dcIdBitsNum;
-            int workerId = (int)(rtnNodeId & ~(-1L << wkIdBitsNum));
+            int datacenterId = (nodeId) >> (int)dcIdBitsNum;
+            int workerId = (int)(nodeId & ~(-1L << wkIdBitsNum));
 
-            LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodePath={}]", !reconnect ? "" : "re",
-                datacenterId, workerId, realNodeFullPath);
+            LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodeZkPath={}]", !reconnect ? "" : "re",
+                datacenterId, workerId, nodeZkPath);
 
-            return Triple.of(Pair.of(datacenterId, workerId), snapshotAllNodes, realNodeFullPath);
+            return Triple.of(Pair.of(datacenterId, workerId), snapshotAllNodes, nodeZkPath);
           } catch (Throwable t) {
             throw sneakyThrow(t);
           }
@@ -218,54 +216,55 @@ public abstract class ZkGuidNode {
     return resultOfCoreProcess.getLeft();
   }
 
-  static Pair<Integer, String> createGuidNode(ACLBackgroundPathAndBytesable<String> dataWriter,
-      List<String> snapshotAllNodes, String nodeCoreZkPath, int maxNode, int tryTimes) throws Exception {
+  private static Pair<Integer, String> doCreateZkNode(ACLBackgroundPathAndBytesable<String> dataWriter,
+      List<String> snapshotAllNodes, String nodeZkFullPath, int maxNode, int tryTimes) throws Exception {
     state(tryTimes <= maxNode, "Times of retry over limited [max-retry-times=%s]", maxNode);
 
-    String nodeZkPath = dataWriter.forPath(nodeCoreZkPath, null);
-    String last10 = nodeZkPath.substring(nodeZkPath.length() - 10);// TODO mj:always 10d?
-    int nodeId = (int)(Long.parseLong(last10) % maxNode);
-    boolean foundDuplicate = snapshotAllNodes.stream().anyMatch(path -> nodeId == calculateNodeIdFrom(path, maxNode));
-    if (foundDuplicate) {
-      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeZkPath);// TODO mj:error handle
-      return createGuidNode(dataWriter, snapshotAllNodes, nodeCoreZkPath, maxNode, ++tryTimes);
+    String realNodeZkPath = dataWriter.forPath(nodeZkFullPath, null);
+    int nodeId = calculateNodeIdFrom(realNodeZkPath, maxNode);
+    boolean foundDup = snapshotAllNodes.stream()
+        .anyMatch(otherNodePath -> nodeId == calculateNodeIdFrom(otherNodePath, maxNode));
+    if (foundDup) {
+      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(realNodeZkPath);// TODO mj:error
+                                                                                                     // handle
+      return doCreateZkNode(dataWriter, snapshotAllNodes, nodeZkFullPath, maxNode, ++tryTimes);
     }
-    return Pair.of(nodeId, nodeZkPath);
+    return Pair.of(nodeId, realNodeZkPath);
   }
 
-  static int calculateNodeIdFrom(String nodeZkPath, int maxNode) {
+  private static int calculateNodeIdFrom(String nodeZkPath, int maxNode) {
     String last10 = nodeZkPath.substring(nodeZkPath.length() - 10);// TODO mj:always 10d?
-    int rtnNodeId = (int)(Long.parseLong(last10) % maxNode);
-    return rtnNodeId;
+    int nodeId = (int)(Long.parseLong(last10) % maxNode);
+    return nodeId;
   }
 
   /**
-   * try remove the old/expired/dirty path
+   * Try remove the old/expired/dirty path
    * <p>
-   * in most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
+   * In most cases,this means a reconnect happens just after 'suspend' but before the actual 'connection-loss'
    * <p>
-   * so for the purpose, more efficient use of '{max-node}-limit', we need to clean-up the old path, after we've got a
-   * success
-   * node-assignment(which means a new node-path generated)
+   * So for the purpose, more efficient use of '{max-node}-limit', we need to clean-up the old path, after we've got a
+   * success node-assignment(which means a new node-path generated)
    */
   private static void doCleanUp(CuratorFramework client, String selfNodePath,
       Triple<Pair<Integer, Integer>, List<String>, String> resultOfCoreProcess) {
-    String nodeOldFullPath = null;
+    String nodeOldZkFullPath = null;
     String msgTpl = null;
     List<String> snapshotAllNodes = resultOfCoreProcess.getMiddle();
-    String nodeNewFullPath = resultOfCoreProcess.getRight();
+    String nodeNewZkPath = resultOfCoreProcess.getRight();
     try {
-      for (String nodeOldPath : snapshotAllNodes) {
-        if (nodeOldPath.startsWith(selfNodePath)) {
-          LOG.warn(msgTpl = "The guid-node is still alive, the old path '{}' would be replaced with the new path '{}'",
-              nodeOldFullPath = ZK_NODES_PATH_ROOT + "/" + nodeOldPath, nodeNewFullPath);
-          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldFullPath);
+      for (String nodeOldZkPath : snapshotAllNodes) {
+        if (nodeOldZkPath.startsWith(selfNodePath)) {
+          LOG.warn(
+              msgTpl = "The guid-node is still alive, the old zk-path '{}' would be replaced with the new zk-path '{}'",
+              nodeOldZkFullPath = ZK_NODES_PATH_ROOT + "/" + nodeOldZkPath, nodeNewZkPath);
+          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldZkFullPath);
           break;
         }
       }
     } catch (Throwable e) {
       // swallow any exception of 'old-path-deletion' to guarantee the core/main process
-      LOG.warn(msgTpl, nodeOldFullPath, nodeNewFullPath);
+      LOG.warn(msgTpl, nodeOldZkFullPath, nodeNewZkPath);
     }
   }
 
