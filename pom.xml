@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-guid-parent</artifactId>
-  <name>Stun4J Guid Parent</name>
+	<name>Stun4J Guid Parent</name>
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
@@ -108,6 +108,10 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
