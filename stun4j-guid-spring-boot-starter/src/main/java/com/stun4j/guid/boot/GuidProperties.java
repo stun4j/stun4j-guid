@@ -16,6 +16,7 @@
 package com.stun4j.guid.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * Base class for configuration of Guid.
@@ -34,6 +35,9 @@ public class GuidProperties {
   public enum Strategy {
     ZK, LOCAL_IP, MANUAL
   }
+
+  @NestedConfigurationProperty
+  private BitEditing bitEditing = new BitEditing();
 
   public int getDatacenterId() {
     return datacenterId;
@@ -83,10 +87,15 @@ public class GuidProperties {
     this.zkNamespace = zkNamespace;
   }
 
+  public BitEditing getBitEditing() {
+    return bitEditing;
+  }
+
   @Override
   public String toString() {
     return "GuidProperties [datacenterId=" + datacenterId + ", workerId=" + workerId + ", ipStartWith=" + ipStartWith
-        + ", strategy=" + strategy + ", zkConnAddr=" + zkConnAddr + ", zkNamespace=" + zkNamespace + "]";
+        + ", strategy=" + strategy + ", zkConnAddr=" + zkConnAddr + ", zkNamespace=" + zkNamespace + ", bitEditing="
+        + bitEditing + "]";
   }
 
 }

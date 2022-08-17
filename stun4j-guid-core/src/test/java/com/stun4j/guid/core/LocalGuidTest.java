@@ -68,7 +68,6 @@ public class LocalGuidTest {
   @Test
   public void _2_extract() {
     LocalGuid guid = LocalGuid.init(0, 0);
-    // System.out.println(guid.next());
     Date date = new Date();
     // System.out.println(date);
     // System.out.println(guid.next());

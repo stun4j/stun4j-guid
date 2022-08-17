@@ -53,9 +53,9 @@ public class LocalGuid {
   private static final AtomicReference<LocalGuid> INSTANCE = new AtomicReference<>();
   private static final UUIDFast UUID_FAST = new UUIDFast(new SecureRandom());
 
-  private final long datacenterIdBitsNum;
-  private final long workerIdBitsNum;
-  private final long seqBitsNum;
+  private final long datacenterIdBits;
+  private final long workerIdBits;
+  private final long seqBits;
   private final long workerIdShift;
   private final long datacenterIdShift;
   private final long timestampShift;
@@ -87,26 +87,26 @@ public class LocalGuid {
     return initWithLocalIp(19, false, 12, false, ipStartWith);
   }
 
-  public static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBitsNum,
+  public static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBits,
       boolean fixedDigitsEnabled) {
-    return initWithLocalIp(digits, shortDcWkIdBitsEnabled, seqBitsNum, fixedDigitsEnabled, null);
+    return initWithLocalIp(digits, shortDcWkIdBitsEnabled, seqBits, fixedDigitsEnabled, null);
   }
 
-  public synchronized static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBitsNum,
+  public synchronized static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBits,
       boolean fixedDigitsEnabled, String ipStartWith, int... theThirdSegmentRange) {
     String localIp = NetworkUtils.getLocalhost(ipStartWith, theThirdSegmentRange);
     int last3 = Integer.parseInt(localIp.substring(localIp.lastIndexOf(".") + 1));
-    long bitsNum = shortDcWkIdBitsEnabled ? 4L : 5L;
-    int datacenterId = last3 >> (int)(bitsNum);
-    int workerId = (int)(last3 & ~(-1L << bitsNum));
+    long bits = shortDcWkIdBitsEnabled ? 4L : 5L;
+    int datacenterId = last3 >> (int)(bits);
+    int workerId = (int)(last3 & ~(-1L << bits));
     LOG.info("The local-guid is initializing with [local-ip={}, datacenterId={}, workerId={}]", localIp, datacenterId,
         workerId);
-    return init(datacenterId, workerId, digits, bitsNum, bitsNum, seqBitsNum, fixedDigitsEnabled);
+    return init(datacenterId, workerId, digits, bits, bits, seqBits, fixedDigitsEnabled);
   }
 
-  public synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBitsNum,
-      long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled) {
-    return init(datacenterId, workerId, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled,
+  public synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBits,
+      long workerIdBits, long seqBits, boolean fixedDigitsEnabled) {
+    return init(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
         LocalGuid.class);
   }
 
@@ -209,18 +209,17 @@ public class LocalGuid {
   }
 
   public final long getTimeMsFromId(long idExpectingSameEpoch) {
-    // TODO mj:If bit-editing is available, don't forget that this may need to change as well
+    // Always start with our own epoch,even if reset after the max-date has been exceeded
     return (idExpectingSameEpoch >> timestampShift & ~(-1L << 41L)) + this.epoch;
   }
-  // <-
 
   protected long currentTimeMs() {
     return System.currentTimeMillis();
   }
 
   final LocalGuid doCoreInit(int datacenterId, int workerId) {
-    long maxDcId = ~(-1L << datacenterIdBitsNum);
-    long maxWkId = ~(-1L << workerIdBitsNum);
+    long maxDcId = ~(-1L << datacenterIdBits);
+    long maxWkId = ~(-1L << workerIdBits);
     // basic check
     argument(datacenterId <= maxDcId && datacenterId >= 0, "The datacenterId can't be greater than %s or less than 0",
         maxDcId);
@@ -258,13 +257,13 @@ public class LocalGuid {
     return init(nodeInfo.getLeft(), nodeInfo.getRight());
   }
 
-  synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBitsNum,
-      long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz) {
+  synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBits,
+      long workerIdBits, long seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz) {
     LocalGuid cur;
     try {
       if (INSTANCE.compareAndSet(null,
           cur = guidClz.getDeclaredConstructor(int.class, long.class, long.class, long.class, boolean.class)
-              .newInstance(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled))) {
+              .newInstance(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled))) {
         LocalGuid instance = cur.doCoreInit(datacenterId, workerId);
 
         // An immediate fixed-digits test
@@ -290,8 +289,8 @@ public class LocalGuid {
           }
         }
         LOG.info(
-            "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBitsNum={}, wkIdBitsNum={}, seqBitsNum={}, fixedDigits={}]",
-            datacenterId, workerId, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
+            "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBits={}, wkIdBits={}, seqBits={}, fixedDigits={}]",
+            datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
         return instance;
       }
     } catch (Throwable t) {
@@ -357,11 +356,11 @@ public class LocalGuid {
     this(19, 5, 5, 12, false);
   }
 
-  LocalGuid(int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled) {
-    this(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, _show_initialization_report);
+  LocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled) {
+    this(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, _show_initialization_report);
   }
 
-  LocalGuid(int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled,
+  LocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
       boolean showReport) {
     long idMaxVal;
     long idMinVal;
@@ -389,24 +388,24 @@ public class LocalGuid {
       default:
         throw new IllegalArgumentException("The local-guid digits range can only be [15,19]");
     }
-    argument(datacenterIdBitsNum > 0, "The local-guid datacenterIdBitsNum must be greater than 0");
-    argument(workerIdBitsNum > 0, "The local-guid workerIdBitsNum must be greater than 0");
-    argument(seqBitsNum > 0, "The local-guid seqBitsNum must be greater than 0");
+    argument(datacenterIdBits > 0, "The local-guid datacenterIdBits must be greater than 0");
+    argument(workerIdBits > 0, "The local-guid workerIdBits must be greater than 0");
+    argument(seqBits > 0, "The local-guid seqBits must be greater than 0");
 
-    this.datacenterIdBitsNum = datacenterIdBitsNum;
-    this.workerIdBitsNum = workerIdBitsNum;
-    this.seqBitsNum = seqBitsNum;
-    this.workerIdShift = seqBitsNum;
-    this.datacenterIdShift = seqBitsNum + workerIdBitsNum;
-    this.seqMask = ~(-1L << seqBitsNum);
+    this.datacenterIdBits = datacenterIdBits;
+    this.workerIdBits = workerIdBits;
+    this.seqBits = seqBits;
+    this.workerIdShift = seqBits;
+    this.datacenterIdShift = seqBits + workerIdBits;
+    this.seqMask = ~(-1L << seqBits);
     this.fixedDigitsEnabled = fixedDigitsEnabled;
-    long timestampShift = this.timestampShift = seqBitsNum + workerIdBitsNum + datacenterIdBitsNum;
+    long timestampShift = this.timestampShift = seqBits + workerIdBits + datacenterIdBits;
     this.maxDeltaMs = idMaxVal >> timestampShift;
     this.minDeltaMs = idMinVal >> timestampShift;
 
     Date maxDate;
     Date nowDate;
-    int maxNode = this.maxNode = 1 << (datacenterIdBitsNum + workerIdBitsNum);
+    int maxNode = this.maxNode = 1 << (datacenterIdBits + workerIdBits);
     argument(
         (maxDate = new Date(epoch + (!fixedDigitsEnabled ? maxDeltaMs : maxDeltaMs - minDeltaMs)))
             .compareTo(nowDate = new Date()) > 0,
@@ -424,7 +423,7 @@ public class LocalGuid {
 
     if (!showReport) return;
     LOG.info("--- Stun4J Guid initialization additional information ---");
-    LOG.info("Theoretical tps: {}", (1 << seqBitsNum) * 1000);
+    LOG.info("Theoretical tps: {}", (1 << seqBits) * 1000);
     LOG.info("Theoretical max-date: {}", !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs));
     LOG.info("     Actual max-date: {}", maxDate);
     LOG.info("Theoretical min-date: {}", new Date(epoch + minDeltaMs));// TODO mj:consider non-fixed-digits
@@ -444,16 +443,16 @@ public class LocalGuid {
     return workerId;
   }
 
-  public final long getDatacenterIdBitsNum() {
-    return datacenterIdBitsNum;
+  public final long getDatacenterIdBits() {
+    return datacenterIdBits;
   }
 
-  public final long getWorkerIdBitsNum() {
-    return workerIdBitsNum;
+  public final long getWorkerIdBits() {
+    return workerIdBits;
   }
 
-  public final long getSeqBitsNum() {
-    return seqBitsNum;
+  public final long getSeqBits() {
+    return seqBits;
   }
 
   public final int getMaxNode() {

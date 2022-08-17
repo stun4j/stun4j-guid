@@ -72,14 +72,14 @@ public abstract class ZkGuidNode {
   }
 
   public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
-      String zkNamespace, int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum,
+      String zkNamespace, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
       boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
     // TODO mj:config
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000).retryPolicy(retryPolicy)
         .namespace(Optional.ofNullable(zkNamespace).orElse(DFT_ZK_NAMESPACE_GUID));
-    return start(clientBuilder, onReconnect, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum,
+    return start(clientBuilder, onReconnect, digits, datacenterIdBits, workerIdBits, seqBits,
         fixedDigitsEnabled, ipStartWith);
   }
 
@@ -89,10 +89,10 @@ public abstract class ZkGuidNode {
   }
 
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
-      int digits, long datacenterIdBitsNum, long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled,
+      int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
       String ipStartWith) throws Exception {
     state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
-    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled,
+    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
         false);
     client = zkClientBuilder.build();
     client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
@@ -174,8 +174,8 @@ public abstract class ZkGuidNode {
       client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(flashCheckPath);
     }
     int maxNode = preChecked.getMaxNode();
-    long dcIdBitsNum = preChecked.getDatacenterIdBitsNum();
-    long wkIdBitsNum = preChecked.getWorkerIdBitsNum();
+    long dcIdBits = preChecked.getDatacenterIdBits();
+    long wkIdBits = preChecked.getWorkerIdBits();
     /*
      * Use lock to prevent 'phantom read' problem,with lock protected,the threshold '1024-worker-processes' is safely
      * limited
@@ -199,8 +199,8 @@ public abstract class ZkGuidNode {
             String nodeZkPath = nodeInfo.getValue();
             state(nodeId >= 0 && nodeId < maxNode, "Wrong guid-node-id [nodeId=%s]", nodeId);
 
-            int datacenterId = (nodeId) >> (int)dcIdBitsNum;
-            int workerId = (int)(nodeId & ~(-1L << wkIdBitsNum));
+            int datacenterId = (nodeId) >> (int)dcIdBits;
+            int workerId = (int)(nodeId & ~(-1L << wkIdBits));
 
             LOG.info("The guid-node {}started [datacenterId={}, workerId={}, nodeZkPath={}]", !reconnect ? "" : "re",
                 datacenterId, workerId, nodeZkPath);

@@ -61,6 +61,7 @@ public class GuidAutoConfigure {
       }
 
       List<String> ipPres;
+      BitEditing bitEdit = props.getBitEditing();
       switch (props.getStrategy()) {
         case ZK:
           String curatorVer = CuratorVersion.getVersion();
@@ -70,15 +71,15 @@ public class GuidAutoConfigure {
                   + advice);
           LOG.info("Your 'curator-recipes' version is {},the recommended version is 2.13.0 or 3.3.0+. {}", curatorVer,
               advice);
-          String ipPre = null;
+          String ipPreToCheck = null;
           if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-start-with")) != null
               && StringUtils.hasText(ipPres.get(0))) {
             // TODO mj:check ip pattern(very strict)
-            ipPre = ipPres.get(0);
+            ipPreToCheck = ipPres.get(0);
           } else if (StringUtils.hasText(props.getIpStartWith())) {
-            ipPre = props.getIpStartWith();
+            ipPreToCheck = props.getIpStartWith();
           }
-          String localIp = NetworkUtils.getLocalhost(ipPre);
+          String localIp = NetworkUtils.getLocalhost(ipPreToCheck);
           List<String> connStrs = appArgs.getOptionValues("stun4j.guid.zk-conn-addr");
           List<String> nameSpaces = appArgs.getOptionValues("stun4j.guid.zk-namespace");
           String connStr = localIp + ":2181", nameSpace = ZkGuidNode.DFT_ZK_NAMESPACE_GUID;
@@ -93,20 +94,41 @@ public class GuidAutoConfigure {
             nameSpace = props.getZkNamespace();
           }
           try {
-            LocalZkGuid.init(connStr, nameSpace, ipPre);
+            if (!bitEdit.isEnabled()) {
+              LocalZkGuid.init(connStr, nameSpace, ipPreToCheck);
+            } else {
+              LocalZkGuid.init(connStr, nameSpace, bitEdit.getDigits(), bitEdit.getDatacenterIdBits(),
+                  bitEdit.getWorkerIdBits(), bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled(), ipPreToCheck);
+            }
           } catch (Throwable e) {
             Exceptions.sneakyThrow(e);
           }
           break;
         case LOCAL_IP:
+          String ipPreToPick;
           if ((ipPres = appArgs.getOptionValues("stun4j.guid.ip-start-with")) != null
-              && StringUtils.hasText(ipPres.get(0))) {
-            // TODO mj:check ip pattern(very strict)
-            LocalGuid.initWithLocalIp(ipPres.get(0));
-          } else if (StringUtils.hasText(props.getIpStartWith())) {
-            LocalGuid.initWithLocalIp(props.getIpStartWith());
+              && StringUtils.hasText(ipPreToPick = ipPres.get(0))) {
+            if (!bitEdit.isEnabled()) {
+              // TODO mj:check ip pattern(very strict)
+              LocalGuid.initWithLocalIp(ipPreToPick);
+            } else {
+              LocalGuid.initWithLocalIp(bitEdit.getDigits(), bitEdit.isShortDcWkIdBitsWhenUsingLocalIpStrategy(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled(), ipPreToPick);
+            }
+          } else if (StringUtils.hasText(ipPreToPick = props.getIpStartWith())) {
+            if (!bitEdit.isEnabled()) {
+              LocalGuid.initWithLocalIp(ipPreToPick);
+            } else {
+              LocalGuid.initWithLocalIp(bitEdit.getDigits(), bitEdit.isShortDcWkIdBitsWhenUsingLocalIpStrategy(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled(), ipPreToPick);
+            }
           } else {
-            LocalGuid.initWithLocalIp();
+            if (!bitEdit.isEnabled()) {
+              LocalGuid.initWithLocalIp();
+            } else {
+              LocalGuid.initWithLocalIp(bitEdit.getDigits(), bitEdit.isShortDcWkIdBitsWhenUsingLocalIpStrategy(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled());
+            }
             LOG.warn(
                 "Automatic selection of local IP is too arbitrary > It is highly recommended that you initialize the local-guid by specifying an IP prefix, or the global uniqueness of the guid could be broken");
           }
@@ -119,13 +141,28 @@ public class GuidAutoConfigure {
           if (dcIds != null || wKIds != null) {
             dcId = (dcIds == null || !StringUtils.hasText(dcIds.get(0))) ? 0 : Integer.parseInt(dcIds.get(0));
             wkId = (wKIds == null || !StringUtils.hasText(wKIds.get(0))) ? 0 : Integer.parseInt(wKIds.get(0));
-            LocalGuid.init(dcId, wkId);
+            if (!bitEdit.isEnabled()) {
+              LocalGuid.init(dcId, wkId);
+            } else {
+              LocalGuid.init(dcId, wkId, bitEdit.getDigits(), bitEdit.getDatacenterIdBits(), bitEdit.getWorkerIdBits(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled());
+            }
             LOG.warn(warnMsg);
           } else if ((dcId = props.getDatacenterId()) >= 0 && (wkId = props.getWorkerId()) >= 0) {
-            LocalGuid.init(dcId, wkId);
+            if (!bitEdit.isEnabled()) {
+              LocalGuid.init(dcId, wkId);
+            } else {
+              LocalGuid.init(dcId, wkId, bitEdit.getDigits(), bitEdit.getDatacenterIdBits(), bitEdit.getWorkerIdBits(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled());
+            }
             LOG.warn(warnMsg);
           } else {
-            LocalGuid.init(0, 0);
+            if (!bitEdit.isEnabled()) {
+              LocalGuid.init(0, 0);
+            } else {
+              LocalGuid.init(0, 0, bitEdit.getDigits(), bitEdit.getDatacenterIdBits(), bitEdit.getWorkerIdBits(),
+                  bitEdit.getSeqBits(), bitEdit.isFixedDigitsEnabled());
+            }
             LOG.warn(
                 "You are running the risk of breaking the global uniqueness of local-guid(Each node takes 0,0 as its dcId and wkId) > It is highly recommended that you choose other initialization strategy for local-guid");
           }

@@ -46,30 +46,30 @@ public class LocalZkGuid {
     LocalGuid.instance().reset(nodeNewInfo);
   };
 
-  public static LocalGuid init(String zkConnectStr, int digits, long datacenterIdBitsNum, long workerIdBitsNum,
-      long seqBitsNum, boolean fixedDigitsEnabled) throws Exception {
-    return init(zkConnectStr, null, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, null);
+  public static LocalGuid init(String zkConnectStr, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+      boolean fixedDigitsEnabled) throws Exception {
+    return init(zkConnectStr, null, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, null);
   }
 
-  public static LocalGuid init(String zkConnectStr, String zkNamespace, int digits, long datacenterIdBitsNum,
-      long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
+  public static LocalGuid init(String zkConnectStr, String zkNamespace, int digits, long datacenterIdBits,
+      long workerIdBits, long seqBits, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
     Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkConnectStr, ON_RECONNECT_FN, zkNamespace, digits,
-        datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, ipStartWith);
+        datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, ipStartWith);
 
-    return doInit(nodeInfo, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
+    return doInit(nodeInfo, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
   }
 
-  public static LocalGuid init(Builder zkClientBuilder, int digits, long datacenterIdBitsNum, long workerIdBitsNum,
-      long seqBitsNum, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
-    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, ON_RECONNECT_FN, digits, datacenterIdBitsNum,
-        workerIdBitsNum, seqBitsNum, fixedDigitsEnabled, ipStartWith);
+  public static LocalGuid init(Builder zkClientBuilder, int digits, long datacenterIdBits, long workerIdBits,
+      long seqBits, boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
+    Pair<Integer, Integer> nodeInfo = ZkGuidNode.start(zkClientBuilder, ON_RECONNECT_FN, digits, datacenterIdBits,
+        workerIdBits, seqBits, fixedDigitsEnabled, ipStartWith);
 
-    return doInit(nodeInfo, digits, datacenterIdBitsNum, workerIdBitsNum, seqBitsNum, fixedDigitsEnabled);
+    return doInit(nodeInfo, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
   }
 
-  private static LocalGuid doInit(Pair<Integer, Integer> nodeInfo, int digits, long datacenterIdBitsNum,
-      long workerIdBitsNum, long seqBitsNum, boolean fixedDigitsEnabled) {
-    return LocalGuid.init(nodeInfo.getLeft(), nodeInfo.getRight(), digits, datacenterIdBitsNum, workerIdBitsNum,
-        seqBitsNum, fixedDigitsEnabled);
+  private static LocalGuid doInit(Pair<Integer, Integer> nodeInfo, int digits, long datacenterIdBits, long workerIdBits,
+      long seqBits, boolean fixedDigitsEnabled) {
+    return LocalGuid.init(nodeInfo.getLeft(), nodeInfo.getRight(), digits, datacenterIdBits, workerIdBits, seqBits,
+        fixedDigitsEnabled);
   }
 }
