@@ -82,9 +82,6 @@ $ mvn clean package
 ## 路线图
 * 支持更多分布式协调者 如etcd等
 * 尽可能克服时间敏感问题
-* 支持Id语义定制
-* TBD
-
 
 ## 参与
 * 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)

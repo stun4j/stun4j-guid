@@ -426,7 +426,9 @@ public class LocalGuid {
     LOG.info("Theoretical tps: {}", (1 << seqBits) * 1000);
     LOG.info("Theoretical max-date: {}", !fixedDigitsEnabled ? maxDate : new Date(epoch + maxDeltaMs));
     LOG.info("     Actual max-date: {}", maxDate);
-    LOG.info("Theoretical min-date: {}", new Date(epoch + minDeltaMs));// TODO mj:consider non-fixed-digits
+    if (fixedDigitsEnabled) {
+      LOG.info("Theoretical min-date: {}", new Date(epoch + minDeltaMs));
+    }
     LOG.info("Theoretical max-node: {}", maxNode);
     LOG.info("---------------------------------------------------------");
   }

@@ -79,8 +79,8 @@ public abstract class ZkGuidNode {
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000).retryPolicy(retryPolicy)
         .namespace(Optional.ofNullable(zkNamespace).orElse(DFT_ZK_NAMESPACE_GUID));
-    return start(clientBuilder, onReconnect, digits, datacenterIdBits, workerIdBits, seqBits,
-        fixedDigitsEnabled, ipStartWith);
+    return start(clientBuilder, onReconnect, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
+        ipStartWith);
   }
 
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
@@ -92,8 +92,7 @@ public abstract class ZkGuidNode {
       int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
       String ipStartWith) throws Exception {
     state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
-    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
-        false);
+    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, false);
     client = zkClientBuilder.build();
     client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
       @Override
@@ -225,8 +224,8 @@ public abstract class ZkGuidNode {
     boolean foundDup = snapshotAllNodes.stream()
         .anyMatch(otherNodePath -> nodeId == calculateNodeIdFrom(otherNodePath, maxNode));
     if (foundDup) {
-      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(realNodeZkPath);// TODO mj:error
-                                                                                                     // handle
+      // TODO mj:error handle
+      client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(realNodeZkPath);
       return doCreateZkNode(dataWriter, snapshotAllNodes, nodeZkFullPath, maxNode, ++tryTimes);
     }
     return Pair.of(nodeId, realNodeZkPath);
