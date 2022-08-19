@@ -92,7 +92,9 @@ public abstract class ZkGuidNode {
       int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
       String ipStartWith) throws Exception {
     state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
-    LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, false);
+    // LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, false);
+    LocalGuid preCheck = new LocalGuid(-1, -1, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
+        false, false);
     client = zkClientBuilder.build();
     client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
       @Override
@@ -154,7 +156,7 @@ public abstract class ZkGuidNode {
     String processId = processName.substring(0, processName.indexOf('@'));
     String selfIp = NetworkUtils.getLocalhost(ipStartWith);
     String selfNodePath = Strings.lenientFormat("%s@%s#", selfIp, processId);
-    String selfNodeFullPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
+    String selfNodeExpectedZkPath = Strings.lenientFormat("%s/%s", ZK_NODES_PATH_ROOT, selfNodePath);
 
     ACLBackgroundPathAndBytesable<String> flashWriter = client.create().creatingParentsIfNeeded()
         .withMode(CreateMode.EPHEMERAL);
@@ -193,7 +195,8 @@ public abstract class ZkGuidNode {
 
             ACLBackgroundPathAndBytesable<String> dataWriter = client.create().creatingParentsIfNeeded()
                 .withMode(CreateMode.EPHEMERAL_SEQUENTIAL);
-            Pair<Integer, String> nodeInfo = doCreateZkNode(dataWriter, snapshotAllNodes, selfNodeFullPath, maxNode, 0);
+            Pair<Integer, String> nodeInfo = doCreateZkNode(dataWriter, snapshotAllNodes, selfNodeExpectedZkPath,
+                maxNode, 0);
             int nodeId = nodeInfo.getKey();
             String nodeZkPath = nodeInfo.getValue();
             state(nodeId >= 0 && nodeId < maxNode, "Wrong guid-node-id [nodeId=%s]", nodeId);
@@ -208,7 +211,7 @@ public abstract class ZkGuidNode {
           } catch (Throwable t) {
             throw sneakyThrow(t);
           }
-        }, selfNodeFullPath).safeRun(15, TimeUnit.SECONDS);
+        }, selfNodeExpectedZkPath).safeRun(15, TimeUnit.SECONDS);
 
     doCleanUp(client, selfNodePath, resultOfCoreProcess);
 
@@ -216,17 +219,17 @@ public abstract class ZkGuidNode {
   }
 
   private static Pair<Integer, String> doCreateZkNode(ACLBackgroundPathAndBytesable<String> dataWriter,
-      List<String> snapshotAllNodes, String nodeZkFullPath, int maxNode, int tryTimes) throws Exception {
+      List<String> snapshotAllNodes, String expectedNodeZkPath, int maxNode, int tryTimes) throws Exception {
     state(tryTimes <= maxNode, "Times of retry over limited [max-retry-times=%s]", maxNode);
 
-    String realNodeZkPath = dataWriter.forPath(nodeZkFullPath, null);
+    String realNodeZkPath = dataWriter.forPath(expectedNodeZkPath, null);
     int nodeId = calculateNodeIdFrom(realNodeZkPath, maxNode);
     boolean foundDup = snapshotAllNodes.stream()
         .anyMatch(otherNodePath -> nodeId == calculateNodeIdFrom(otherNodePath, maxNode));
     if (foundDup) {
       // TODO mj:error handle
       client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(realNodeZkPath);
-      return doCreateZkNode(dataWriter, snapshotAllNodes, nodeZkFullPath, maxNode, ++tryTimes);
+      return doCreateZkNode(dataWriter, snapshotAllNodes, expectedNodeZkPath, maxNode, ++tryTimes);
     }
     return Pair.of(nodeId, realNodeZkPath);
   }
@@ -247,23 +250,23 @@ public abstract class ZkGuidNode {
    */
   private static void doCleanUp(CuratorFramework client, String selfNodePath,
       Triple<Pair<Integer, Integer>, List<String>, String> resultOfCoreProcess) {
-    String nodeOldZkFullPath = null;
+    String nodeOldZkPath = null;
     String msgTpl = null;
     List<String> snapshotAllNodes = resultOfCoreProcess.getMiddle();
     String nodeNewZkPath = resultOfCoreProcess.getRight();
     try {
-      for (String nodeOldZkPath : snapshotAllNodes) {
-        if (nodeOldZkPath.startsWith(selfNodePath)) {
+      for (String nodeZkPath : snapshotAllNodes) {
+        if (nodeZkPath.startsWith(selfNodePath)) {
           LOG.warn(
               msgTpl = "The guid-node is still alive, the old zk-path '{}' would be replaced with the new zk-path '{}'",
-              nodeOldZkFullPath = ZK_NODES_PATH_ROOT + "/" + nodeOldZkPath, nodeNewZkPath);
-          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldZkFullPath);
+              nodeOldZkPath = ZK_NODES_PATH_ROOT + "/" + nodeZkPath, nodeNewZkPath);
+          client.delete().guaranteed().deletingChildrenIfNeeded().inBackground().forPath(nodeOldZkPath);
           break;
         }
       }
     } catch (Throwable e) {
       // swallow any exception of 'old-path-deletion' to guarantee the core/main process
-      LOG.warn(msgTpl, nodeOldZkFullPath, nodeNewZkPath);
+      LOG.warn(msgTpl, nodeOldZkPath, nodeNewZkPath);
     }
   }
 

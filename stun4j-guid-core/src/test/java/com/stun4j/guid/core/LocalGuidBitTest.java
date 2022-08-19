@@ -17,9 +17,15 @@ public class LocalGuidBitTest {
 
   static class MockLocalGuid extends LocalGuid {
 
-    public MockLocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits,
-        boolean fixedDigitsEnabled) {
-      super(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
+//    public MockLocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+//        boolean fixedDigitsEnabled) {
+//      super(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
+//    }
+
+    public MockLocalGuid(int datacenterId, int workerId, int digits, long datacenterIdBits, long workerIdBits,
+        long seqBits, boolean fixedDigitsEnabled) {
+      super(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
+      // TODO Auto-generated constructor stub
     }
 
     @Override

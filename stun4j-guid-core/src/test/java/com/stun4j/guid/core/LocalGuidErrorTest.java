@@ -18,10 +18,10 @@ package com.stun4j.guid.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.lang.reflect.InvocationTargetException;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import com.stun4j.guid.core.LocalGuid;
 
 public class LocalGuidErrorTest {
 
@@ -46,12 +46,24 @@ public class LocalGuidErrorTest {
         .withMessage(initMsg);
     // datacenterId range protect
     String msg = "The datacenterId can't be greater than " + maxId + " or less than 0";
-    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(-1, 0)).withMessage(msg);
-    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(32, 0)).withMessage(msg);
+    // assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(-1,
+    // 0)).withMessage(msg);
+    // assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(32,
+    // 0)).withMessage(msg);
+    assertThatExceptionOfType(InvocationTargetException.class).isThrownBy(() -> LocalGuid.init(-1, 0))
+        .withCauseExactlyInstanceOf(IllegalArgumentException.class).withStackTraceContaining(msg);
+    assertThatExceptionOfType(InvocationTargetException.class).isThrownBy(() -> LocalGuid.init(32, 0))
+        .withCauseExactlyInstanceOf(IllegalArgumentException.class).withStackTraceContaining(msg);
     // workerId range protect
     msg = "The workerId can't be greater than " + maxId + " or less than 0";
-    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0, -1)).withMessage(msg);
-    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0, 32)).withMessage(msg);
+    // assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0,
+    // -1)).withMessage(msg);
+    // assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.init(0,
+    // 32)).withMessage(msg);
+    assertThatExceptionOfType(InvocationTargetException.class).isThrownBy(() -> LocalGuid.init(0, -1))
+        .withCauseExactlyInstanceOf(IllegalArgumentException.class).withStackTraceContaining(msg);
+    assertThatExceptionOfType(InvocationTargetException.class).isThrownBy(() -> LocalGuid.init(0, 32))
+        .withCauseExactlyInstanceOf(IllegalArgumentException.class).withStackTraceContaining(msg);
 
     // a safe post check
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> LocalGuid.instance())

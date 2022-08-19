@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Utils;
 
 public class LocalGuidBenchmark {

@@ -116,9 +116,10 @@ public class LocalGuid {
 
   public static LocalGuid instance() {
     LocalGuid instance;
-    argument((instance = INSTANCE.get()) != null && instance.datacenterId >= 0 && instance.workerId >= 0,
-        "The local-guid must be initialized in the very begining");
-    return instance;
+    argument((instance = INSTANCE.get()) != null, "The local-guid must be initialized in the very begining");
+    synchronized (instance) {
+      return instance;
+    }
   }
 
   public static String uuid() {
@@ -217,7 +218,7 @@ public class LocalGuid {
     return System.currentTimeMillis();
   }
 
-  final LocalGuid doCoreInit(int datacenterId, int workerId) {
+  final void doInitDcWkId(int datacenterId, int workerId) {
     long maxDcId = ~(-1L << datacenterIdBits);
     long maxWkId = ~(-1L << workerIdBits);
     // basic check
@@ -230,7 +231,6 @@ public class LocalGuid {
       this.datacenterId = datacenterId;
       this.workerId = workerId;
     }
-    return this;
   }
 
   private long casGetNextMs(long lastTimestamp) {
@@ -259,35 +259,14 @@ public class LocalGuid {
 
   synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBits,
       long workerIdBits, long seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz) {
-    LocalGuid cur;
+    LocalGuid instance = null;
     try {
       if (INSTANCE.compareAndSet(null,
-          cur = guidClz.getDeclaredConstructor(int.class, long.class, long.class, long.class, boolean.class)
-              .newInstance(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled))) {
-        LocalGuid instance = cur.doCoreInit(datacenterId, workerId);
-
-        // An immediate fixed-digits test
-        if (fixedDigitsEnabled) {
-          long idTry = instance.next();
-          Consumer<Integer> assertDigits = actualDigits -> {
-            argument(digits == actualDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]",
-                digits, NumberFormat.getInstance().format(idTry));
-          };
-          if (idTry >= 10000_00000_00000L && idTry <= 99999_99999_99999L) {
-            assertDigits.accept(15);
-          } else if (idTry >= 10000_00000_00000_0L && idTry <= 99999_99999_99999_9L) {
-            assertDigits.accept(16);
-          } else if (idTry >= 10000_00000_00000_00L && idTry <= 99999_99999_99999_99L) {
-            assertDigits.accept(17);
-          } else if (idTry >= 10000_00000_00000_000L && idTry <= 99999_99999_99999_999L) {
-            assertDigits.accept(18);
-          } else if (idTry >= 10000_00000_00000_0000L && idTry <= Long.MAX_VALUE) {
-            assertDigits.accept(19);
-          } else {
-            throw new IllegalArgumentException("The local-guid digits range can only be [15,19], but the actual id was "
-                + NumberFormat.getInstance().format(idTry));
-          }
-        }
+          instance = guidClz.getDeclaredConstructor(int.class, int.class, int.class, long.class, long.class, long.class,
+              boolean.class).newInstance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+                  fixedDigitsEnabled))) {
+        doMultiInstanceAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+            fixedDigitsEnabled, guidClz, instance);
         LOG.info(
             "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBits={}, wkIdBits={}, seqBits={}, fixedDigits={}]",
             datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
@@ -297,19 +276,33 @@ public class LocalGuid {
       reset();
       Exceptions.sneakyThrow(t);
     }
-    cur = INSTANCE.get();
+    // multi-instance register if necessary->
+    doMultiInstanceAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+        fixedDigitsEnabled, guidClz, instance);
+    // <-
+
+    instance = INSTANCE.get();
     long curDatacenterId;
     long curWorkerId;
-    synchronized (cur) {
-      curDatacenterId = cur.datacenterId;
-      curWorkerId = cur.workerId;
+    synchronized (instance) {
+      curDatacenterId = instance.datacenterId;
+      curWorkerId = instance.workerId;
     }
     if (curDatacenterId != datacenterId || curWorkerId != workerId) {
       LOG.warn("The local-guid has already been initialized,new initialization was ignored [current={}, new={}]",
           lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
           lenientFormat("dcId:%s,wkId:%s", datacenterId, workerId));
     }
-    return cur;
+    return instance;
+  }
+
+  private static void doMultiInstanceAwareInit(int datacenterId, int workerId, int digits, long datacenterIdBits,
+      long workerIdBits, long seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz,
+      LocalGuid instance) {
+    if (LocalGuidMulti._enabled) {
+      LocalGuidMulti.putIfAbsent(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+          fixedDigitsEnabled, guidClz, instance);// make multi-instance registry work
+    }
   }
 
   // mainly for reconnect purpose
@@ -331,7 +324,7 @@ public class LocalGuid {
     LOG.warn("The datacenterId or workerId is being changed [current={}, new={}]",
         lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
         lenientFormat("dcId:%s,wkId:%s", newDatacenterId, newWorkerId));
-    doCoreInit(newDatacenterId, newWorkerId);
+    doInitDcWkId(newDatacenterId, newWorkerId);
     LOG.info("The local-guid is successfully reset [datacenterId={}, workerId={}]", newDatacenterId, newWorkerId);
   }
 
@@ -352,16 +345,14 @@ public class LocalGuid {
     INSTANCE.set(null);
   }
 
-  LocalGuid() {
-    this(19, 5, 5, 12, false);
+  LocalGuid(int datacenterId, int workerId, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+      boolean fixedDigitsEnabled) {
+    this(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, true,
+        _show_initialization_report);
   }
 
-  LocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled) {
-    this(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, _show_initialization_report);
-  }
-
-  LocalGuid(int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
-      boolean showReport) {
+  LocalGuid(int datacenterId, int workerId, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+      boolean fixedDigitsEnabled, boolean initDcWk, boolean showReport) {
     long idMaxVal;
     long idMinVal;
     switch (digits) {
@@ -421,6 +412,33 @@ public class LocalGuid {
           Integer.toBinaryString(_limited_max_node).length() - 1);
     }
 
+    if (initDcWk) {
+      doInitDcWkId(datacenterId, workerId);
+
+      if (fixedDigitsEnabled) {
+        long idTry = this.next();
+        Consumer<Integer> assertDigits = actualDigits -> {
+          argument(digits == actualDigits, "The local-guid digits not matched [expected digits=%s, actual id=%s]",
+              digits, NumberFormat.getInstance().format(idTry));
+        };
+        if (idTry >= 10000_00000_00000L && idTry <= 99999_99999_99999L) {
+          assertDigits.accept(15);
+        } else if (idTry >= 10000_00000_00000_0L && idTry <= 99999_99999_99999_9L) {
+          assertDigits.accept(16);
+        } else if (idTry >= 10000_00000_00000_00L && idTry <= 99999_99999_99999_99L) {
+          assertDigits.accept(17);
+        } else if (idTry >= 10000_00000_00000_000L && idTry <= 99999_99999_99999_999L) {
+          assertDigits.accept(18);
+        } else if (idTry >= 10000_00000_00000_0000L && idTry <= Long.MAX_VALUE) {
+          assertDigits.accept(19);
+        } else {
+          throw new IllegalArgumentException("The local-guid digits range can only be [15,19], but the actual id was "
+              + NumberFormat.getInstance().format(idTry));
+        }
+      }
+    }
+
+    // the report
     if (!showReport) return;
     LOG.info("--- Stun4J Guid initialization additional information ---");
     LOG.info("Theoretical tps: {}", (1 << seqBits) * 1000);
