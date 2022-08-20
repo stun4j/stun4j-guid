@@ -86,8 +86,8 @@ $ mvn clean package
 * 尽可能克服时间敏感问题
 
 ## 参与
-* 报告bugs、给到建议反馈，请提交一个[issue](/issues/new)
-* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](/issues/new)以便讨论与进度追踪
+* 报告bugs、给到建议反馈，请提交一个[issue](../../issues/new)
+* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](../../issues/new)以便讨论与进度追踪
 * 不吝赐 :star2:
 
 ## 感谢
