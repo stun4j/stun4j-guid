@@ -1,7 +1,7 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### 分布式ID生成器 全局唯一、极速、趋势递增、易于使用  / [English](README_en_US.md) 
+### 分布式ID生成器 全局唯一、语义定制、极速、趋势递增、易于使用  / [English](README_en_US.md) 
 
 
 | 稳定版 | 主要变动 | 发布日期 |
@@ -86,8 +86,8 @@ $ mvn clean package
 * 尽可能克服时间敏感问题
 
 ## 参与
-* 报告bugs、给到建议反馈，请提交一个[issue](./issues/new)
-* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](./issues/new)以便讨论与进度追踪
+* 报告bugs、给到建议反馈，请提交一个[issue](/issues/new)
+* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](/issues/new)以便讨论与进度追踪
 * 不吝赐 :star2:
 
 ## 感谢

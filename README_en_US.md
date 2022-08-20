@@ -1,7 +1,7 @@
 # Stun4J Guid
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-### Global unique id generator, distributed, ultra fast, easy to use / [中文版](README.md) 
+### Global unique id generator, distributed, customizable semantics, ultra fast, easy to use / [中文版](README.md) 
 
 
 | Stable Release Version | Major change | Release Date |
