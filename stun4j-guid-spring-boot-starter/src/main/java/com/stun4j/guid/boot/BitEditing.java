@@ -59,21 +59,21 @@ public class BitEditing {
    * <p>
    * Default: 5
    */
-  private long datacenterIdBits = 5;
+  private int datacenterIdBits = 5;
 
   /**
    * Number of (binary)bits occupied by workerId
    * <p>
    * Default: 5
    */
-  private long workerIdBits = 5;
+  private int workerIdBits = 5;
 
   /**
    * Number of (binary)bits occupied by sequence
    * <p>
    * Default: 12
    */
-  private long seqBits = 12;
+  private int seqBits = 12;
 
   public boolean isEnabled() {
     return enabled;
@@ -102,29 +102,29 @@ public class BitEditing {
     this.fixedDigitsEnabled = fixedDigitsEnabled;
   }
 
-  public long getDatacenterIdBits() {
+  public int getDatacenterIdBits() {
     return datacenterIdBits;
   }
 
-  public void setDatacenterIdBits(long datacenterIdBits) {
+  public void setDatacenterIdBits(int datacenterIdBits) {
     state(enabled, MSG);
     this.datacenterIdBits = datacenterIdBits;
   }
 
-  public long getWorkerIdBits() {
+  public int getWorkerIdBits() {
     return workerIdBits;
   }
 
-  public void setWorkerIdBits(long workerIdBits) {
+  public void setWorkerIdBits(int workerIdBits) {
     state(enabled, MSG);
     this.workerIdBits = workerIdBits;
   }
 
-  public long getSeqBits() {
+  public int getSeqBits() {
     return seqBits;
   }
 
-  public void setSeqBits(long seqBits) {
+  public void setSeqBits(int seqBits) {
     state(enabled, MSG);
     this.seqBits = seqBits;
   }

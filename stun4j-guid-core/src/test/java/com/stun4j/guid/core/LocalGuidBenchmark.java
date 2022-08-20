@@ -31,12 +31,17 @@ public class LocalGuidBenchmark {
       new ThreadPoolExecutor.CallerRunsPolicy());
 
   public static void main(String[] args) {
-    byte mode = 0;// 0:single thread 1:multi-thread
+    LocalGuidMultiton._enabled = true;
+
+    byte mode = 2;// 0:single-thread 1:multi-thread 2:single-thread,solo instance got from multiton registry
     LocalGuid guid = LocalGuid.init(0, 0);
     // warm round
     for (int i = 0; i < 10_0000; i++) {
       guid.next();
+      LocalGuidMultiton.instance().next();
     }
+    LocalGuidMultiton._auto_register_enabled = false;
+
     // benchmark round
     MetricRegistry registry = new MetricRegistry();
     ConsoleReporter reporter = ConsoleReporter.forRegistry(registry).build();
@@ -45,10 +50,15 @@ public class LocalGuidBenchmark {
     int round = 5000_0000;
     long start = System.currentTimeMillis();
     // start
-    if (mode == 0) {
+    if (mode == 0 || mode == 2) {
       for (int i = 0; i < round; i++) {
         // guid.next();
         LocalGuid.instance().next();
+        if (mode == 0) {
+          LocalGuid.instance().next();
+        } else {
+          LocalGuidMultiton.instance().next();
+        }
         meter.mark();
       }
     } else {

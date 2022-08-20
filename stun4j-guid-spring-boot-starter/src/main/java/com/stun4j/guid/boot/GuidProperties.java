@@ -39,6 +39,9 @@ public class GuidProperties {
   @NestedConfigurationProperty
   private BitEditing bitEditing = new BitEditing();
 
+  @NestedConfigurationProperty
+  private Multiton multiton = new Multiton();
+
   public int getDatacenterId() {
     return datacenterId;
   }
@@ -91,11 +94,15 @@ public class GuidProperties {
     return bitEditing;
   }
 
+  public Multiton getMultiton() {
+    return multiton;
+  }
+
   @Override
   public String toString() {
     return "GuidProperties [datacenterId=" + datacenterId + ", workerId=" + workerId + ", ipStartWith=" + ipStartWith
         + ", strategy=" + strategy + ", zkConnAddr=" + zkConnAddr + ", zkNamespace=" + zkNamespace + ", bitEditing="
-        + bitEditing + "]";
+        + bitEditing + ", multiton=" + multiton + "]";
   }
 
 }

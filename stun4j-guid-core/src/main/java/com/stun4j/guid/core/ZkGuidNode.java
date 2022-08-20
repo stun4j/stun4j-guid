@@ -72,8 +72,8 @@ public abstract class ZkGuidNode {
   }
 
   public static Pair<Integer, Integer> start(String zkConnectStr, Consumer<Pair<Integer, Integer>> onReconnect,
-      String zkNamespace, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
-      boolean fixedDigitsEnabled, String ipStartWith) throws Exception {
+      String zkNamespace, int digits, int datacenterIdBits, int workerIdBits, int seqBits, boolean fixedDigitsEnabled,
+      String ipStartWith) throws Exception {
     // TODO mj:config
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     Builder clientBuilder = CuratorFrameworkFactory.builder().connectString(zkConnectStr).sessionTimeoutMs(5000)
@@ -89,8 +89,8 @@ public abstract class ZkGuidNode {
   }
 
   public static Pair<Integer, Integer> start(Builder zkClientBuilder, Consumer<Pair<Integer, Integer>> onReconnect,
-      int digits, long datacenterIdBits, long workerIdBits, long seqBits, boolean fixedDigitsEnabled,
-      String ipStartWith) throws Exception {
+      int digits, int datacenterIdBits, int workerIdBits, int seqBits, boolean fixedDigitsEnabled, String ipStartWith)
+      throws Exception {
     state(STARTED.compareAndSet(false, true), "The guid-node has already been started");
     // LocalGuid preCheck = new LocalGuid(digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, false);
     LocalGuid preCheck = new LocalGuid(-1, -1, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,

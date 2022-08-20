@@ -87,25 +87,25 @@ public class LocalGuid {
     return initWithLocalIp(19, false, 12, false, ipStartWith);
   }
 
-  public static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBits,
+  public static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, int seqBits,
       boolean fixedDigitsEnabled) {
     return initWithLocalIp(digits, shortDcWkIdBitsEnabled, seqBits, fixedDigitsEnabled, null);
   }
 
-  public synchronized static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, long seqBits,
+  public synchronized static LocalGuid initWithLocalIp(int digits, boolean shortDcWkIdBitsEnabled, int seqBits,
       boolean fixedDigitsEnabled, String ipStartWith, int... theThirdSegmentRange) {
     String localIp = NetworkUtils.getLocalhost(ipStartWith, theThirdSegmentRange);
     int last3 = Integer.parseInt(localIp.substring(localIp.lastIndexOf(".") + 1));
-    long bits = shortDcWkIdBitsEnabled ? 4L : 5L;
-    int datacenterId = last3 >> (int)(bits);
-    int workerId = (int)(last3 & ~(-1L << bits));
+    int bits = shortDcWkIdBitsEnabled ? 4 : 5;
+    int datacenterId = last3 >> bits;
+    int workerId = last3 & ~(-1 << bits);
     LOG.info("The local-guid is initializing with [local-ip={}, datacenterId={}, workerId={}]", localIp, datacenterId,
         workerId);
     return init(datacenterId, workerId, digits, bits, bits, seqBits, fixedDigitsEnabled);
   }
 
-  public synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBits,
-      long workerIdBits, long seqBits, boolean fixedDigitsEnabled) {
+  public synchronized static LocalGuid init(int datacenterId, int workerId, int digits, int datacenterIdBits,
+      int workerIdBits, int seqBits, boolean fixedDigitsEnabled) {
     return init(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
         LocalGuid.class);
   }
@@ -257,19 +257,19 @@ public class LocalGuid {
     return init(nodeInfo.getLeft(), nodeInfo.getRight());
   }
 
-  synchronized static LocalGuid init(int datacenterId, int workerId, int digits, long datacenterIdBits,
-      long workerIdBits, long seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz) {
+  synchronized static LocalGuid init(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
+      int seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz) {
     LocalGuid instance = null;
     try {
-      if (INSTANCE.compareAndSet(null,
-          instance = guidClz.getDeclaredConstructor(int.class, int.class, int.class, long.class, long.class, long.class,
-              boolean.class).newInstance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
-                  fixedDigitsEnabled))) {
+      if (INSTANCE
+          .compareAndSet(null,
+              instance = guidClz.getDeclaredConstructor(int.class, int.class, int.class, int.class, int.class,
+                  int.class, boolean.class).newInstance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits,
+                      seqBits, fixedDigitsEnabled))) {
         doMultiInstanceAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
             fixedDigitsEnabled, guidClz, instance);
-        LOG.info(
-            "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBits={}, wkIdBits={}, seqBits={}, fixedDigits={}]",
-            datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
+        logSuccessfullyInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
+            LOG);
         return instance;
       }
     } catch (Throwable t) {
@@ -289,20 +289,27 @@ public class LocalGuid {
       curWorkerId = instance.workerId;
     }
     if (curDatacenterId != datacenterId || curWorkerId != workerId) {
-      LOG.warn("The local-guid has already been initialized,new initialization was ignored [current={}, new={}]",
+      LOG.warn("The local-guid has already been initialized, new initialization is ignored! [current={}, new={}]",
           lenientFormat("dcId:%s,wkId:%s", curDatacenterId, curWorkerId),
           lenientFormat("dcId:%s,wkId:%s", datacenterId, workerId));
     }
     return instance;
   }
 
-  private static void doMultiInstanceAwareInit(int datacenterId, int workerId, int digits, long datacenterIdBits,
-      long workerIdBits, long seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz,
+  private static void doMultiInstanceAwareInit(int datacenterId, int workerId, int digits, int datacenterIdBits,
+      int workerIdBits, int seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz,
       LocalGuid instance) {
-    if (LocalGuidMulti._enabled) {
-      LocalGuidMulti.putIfAbsent(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+    if (LocalGuidMultiton._enabled) {
+      LocalGuidMultiton.putIfAbsent(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
           fixedDigitsEnabled, guidClz, instance);// make multi-instance registry work
     }
+  }
+
+  static void logSuccessfullyInit(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
+      int seqBits, boolean fixedDigitsEnabled, Logger log) {
+    log.info(
+        "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBits={}, wkIdBits={}, seqBits={}, fixedDigits={}]",
+        datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
   }
 
   // mainly for reconnect purpose
@@ -345,13 +352,13 @@ public class LocalGuid {
     INSTANCE.set(null);
   }
 
-  LocalGuid(int datacenterId, int workerId, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+  LocalGuid(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits, int seqBits,
       boolean fixedDigitsEnabled) {
     this(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, true,
         _show_initialization_report);
   }
 
-  LocalGuid(int datacenterId, int workerId, int digits, long datacenterIdBits, long workerIdBits, long seqBits,
+  LocalGuid(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits, int seqBits,
       boolean fixedDigitsEnabled, boolean initDcWk, boolean showReport) {
     long idMaxVal;
     long idMinVal;

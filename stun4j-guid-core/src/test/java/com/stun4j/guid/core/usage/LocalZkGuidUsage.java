@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.guid.core;
+package com.stun4j.guid.core.usage;
 
+import java.text.NumberFormat;
+
+import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.LocalGuidMultiton;
+import com.stun4j.guid.core.LocalZkGuid;
 import com.stun4j.guid.core.utils.Utils;
 
 public class LocalZkGuidUsage {
@@ -30,12 +35,27 @@ public class LocalZkGuidUsage {
     new Thread(() -> {
       while (true) {
         Utils.sleepSeconds(5);
-        System.out.println("background id generating: " + LocalGuid.instance().next());
+        // System.out.println("background id generating: " + LocalGuid.instance().next());
+        System.out.println(
+            "background short id generating: " + NumberFormat.getInstance().format(LocalGuid.instance().next()));
+      }
+    }).start();
+
+    // multiton demo
+    LocalGuidMultiton._enabled = true;
+
+    new Thread(() -> {
+      while (true) {
+        Utils.sleepSeconds(5);
+        // this is a traditional snowflake
+        System.out.println("background long id generating: "
+            + NumberFormat.getInstance().format(LocalGuidMultiton.instance(19, 5, 5, 12, false).next()));
       }
     }).start();
 
     // keep work process running;
     Thread.sleep(Integer.MAX_VALUE);
+
   }
 
 }
