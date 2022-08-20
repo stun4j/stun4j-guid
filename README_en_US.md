@@ -12,9 +12,11 @@
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
-* Clound-native friendly,fully workable on virtualization environment with floating ip/port.
-* Ultra fast on id-generating, **over million QPS per single process/node**
 * Monotonic increasing mechanism, based on twitter-snowflake algorithm, clock-backwards awarness,self-healable
+* ID supports semantic customization, which can be customized freely in ID length, node number, TPS, service life and other aspects
+* ID supports both singleton and multiton, and is no longer limited to a single id-generating policy
+* Ultra fast on id-generating, **over million QPS per single process/node**
+* Clound-native friendly,fully workable on virtualization environment with floating ip/port.
 * The artifact is a very-small jar,with minimal dependencies, easy to use
 
 ## How to get

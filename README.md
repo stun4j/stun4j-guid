@@ -13,9 +13,11 @@
 
 ## 功能特性
 * 生成全局唯一的ID，适用于分布式环境(以进程为最小工作单元，在单机/伪集群中照常工作)
-* 云原生、虚拟环境友好，对IP、端口的漂移无感
-* 生成速度极快，轻松达到 **单机百万级的QPS**
 * ID趋势递增，基于twitter-snowflake算法，针对时钟回退能够有限自愈
+* ID支持语义化定制，可在ID长度、节点数量、TPS、使用年限等各方面进行自由定制
+* ID同时支持单例和多例，不再局限于单一的ID策略
+* 生成速度极快，轻松达到 **单机百万级的QPS**
+* 云原生、虚拟环境友好，对IP、端口的漂移无感
 * 制品为袖珍型jar包，依赖极少，易于使用和集成
 
 ## 如何获取
@@ -84,8 +86,8 @@ $ mvn clean package
 * 尽可能克服时间敏感问题
 
 ## 参与
-* 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)
-* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-guid/issues/new)以便讨论与进度追踪
+* 报告bugs、给到建议反馈，请提交一个[issue](./issues/new)
+* 参与贡献 改进或新功能，请提交pull request并创建一个[issue](./issues/new)以便讨论与进度追踪
 * 不吝赐 :star2:
 
 ## 感谢
