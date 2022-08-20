@@ -87,8 +87,8 @@ $ mvn clean package
 ## Contributions
 To help Stun4J-Guid development you are encouraged to
 
-* For reporting bugs, provide suggestion/feedback, please open an [issue](https://github.com/stun4j/stun4j-guid/issues/new)
-* For contributing improvements or new features, please send in the pull request and open an [issue](https://github.com/stun4j/stun4j-guid/issues/new) for discussion and progress tracking
+* For reporting bugs, provide suggestion/feedback, please open an [issue](../../issues/new)
+* For contributing improvements or new features, please send in the pull request and open an [issue](../../issues/new) for discussion and progress tracking
 * Star :star2: the project
 
 ## Thanks
