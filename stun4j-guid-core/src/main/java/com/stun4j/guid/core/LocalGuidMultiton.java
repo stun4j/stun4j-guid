@@ -15,6 +15,7 @@
  */
 package com.stun4j.guid.core;
 
+import static com.stun4j.guid.core.LocalGuid.logSuccessfullyInitialized;
 import static com.stun4j.guid.core.utils.Strings.lenientFormat;
 
 import java.util.HashMap;
@@ -45,9 +46,14 @@ public class LocalGuidMultiton {
 
   static LocalGuid putIfAbsent(int digits, int datacenterIdBits, int workerIdBits, int seqBits,
       boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz, LocalGuid instance) {
-    int[] dw = safeGetDcWkId();
-    return putIfAbsent(dw[0], dw[1], digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled, guidClz,
-        instance);
+    int datacenterId;
+    int workerId;
+    synchronized (instance) {
+      datacenterId = (int)instance.getDatacenterId();
+      workerId = (int)instance.getWorkerId();
+    }
+    return putIfAbsent(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
+        guidClz, instance);
   }
 
   static LocalGuid putIfAbsent(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
@@ -60,8 +66,14 @@ public class LocalGuidMultiton {
 
   public static LocalGuid instance(int digits, int datacenterIdBits, int workerIdBits, int seqBits,
       boolean fixedDigitsEnabled) {
-    int[] dw = safeGetDcWkId();
-    return instance(dw[0], dw[1], digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
+    int datacenterId;
+    int workerId;
+    LocalGuid instance;
+    synchronized (instance = LocalGuid.instance()) {
+      datacenterId = (int)instance.getDatacenterId();
+      workerId = (int)instance.getWorkerId();
+    }
+    return instance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
   }
 
   static LocalGuid instance(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
@@ -81,7 +93,7 @@ public class LocalGuidMultiton {
           LocalGuid instance = guidClz
               .getDeclaredConstructor(int.class, int.class, int.class, int.class, int.class, int.class, boolean.class)
               .newInstance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled);
-          LocalGuid.logSuccessfullyInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+          logSuccessfullyInitialized(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
               fixedDigitsEnabled, LOG);
           return instance;
         } catch (Exception e) {
@@ -101,17 +113,6 @@ public class LocalGuidMultiton {
     return lenientFormat("%s-%s-%s-%s-%s-%s-%s-%s", datacenterId, workerId, digits, datacenterIdBits, workerIdBits,
         seqBits, fixedDigitsEnabled,
         Optional.ofNullable(RESERVED_KEY_SUFFIX.get(guidClz)).orElseGet(() -> guidClz.getName()));
-  }
-
-  private static int[] safeGetDcWkId() {
-    long datacenterId;
-    long workerId;
-    LocalGuid instance;
-    synchronized (instance = LocalGuid.instance()) {
-      datacenterId = instance.getDatacenterId();
-      workerId = instance.getWorkerId();
-    }
-    return new int[]{(int)datacenterId, (int)workerId};// TODO mj:any problem?
   }
 
   // mainly for test purpose

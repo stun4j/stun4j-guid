@@ -266,9 +266,9 @@ public class LocalGuid {
               instance = guidClz.getDeclaredConstructor(int.class, int.class, int.class, int.class, int.class,
                   int.class, boolean.class).newInstance(datacenterId, workerId, digits, datacenterIdBits, workerIdBits,
                       seqBits, fixedDigitsEnabled))) {
-        doMultiInstanceAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+        doMultitonAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
             fixedDigitsEnabled, guidClz, instance);
-        logSuccessfullyInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
+        logSuccessfullyInitialized(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits, fixedDigitsEnabled,
             LOG);
         return instance;
       }
@@ -277,7 +277,7 @@ public class LocalGuid {
       Exceptions.sneakyThrow(t);
     }
     // multi-instance register if necessary->
-    doMultiInstanceAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
+    doMultitonAwareInit(datacenterId, workerId, digits, datacenterIdBits, workerIdBits, seqBits,
         fixedDigitsEnabled, guidClz, instance);
     // <-
 
@@ -296,7 +296,7 @@ public class LocalGuid {
     return instance;
   }
 
-  private static void doMultiInstanceAwareInit(int datacenterId, int workerId, int digits, int datacenterIdBits,
+  private static void doMultitonAwareInit(int datacenterId, int workerId, int digits, int datacenterIdBits,
       int workerIdBits, int seqBits, boolean fixedDigitsEnabled, Class<? extends LocalGuid> guidClz,
       LocalGuid instance) {
     if (LocalGuidMultiton._enabled) {
@@ -305,7 +305,7 @@ public class LocalGuid {
     }
   }
 
-  static void logSuccessfullyInit(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
+  static void logSuccessfullyInitialized(int datacenterId, int workerId, int digits, int datacenterIdBits, int workerIdBits,
       int seqBits, boolean fixedDigitsEnabled, Logger log) {
     log.info(
         "The local-guid is successfully initialized [dcId={}, wkId={}, digits={}, dcIdBits={}, wkIdBits={}, seqBits={}, fixedDigits={}]",
