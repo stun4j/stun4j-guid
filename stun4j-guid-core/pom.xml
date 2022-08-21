@@ -102,6 +102,20 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!-- The reset of the log file was found to be affected -->
+					<!-- LocalGuidTest#_0_highConcurrencySingleton_init vs. LocalGuidMultitonTest#_1_basic -->
+					<reuseForks>false</reuseForks>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<profiles>
 		<profile>
 			<id>dev-zk34</id>
