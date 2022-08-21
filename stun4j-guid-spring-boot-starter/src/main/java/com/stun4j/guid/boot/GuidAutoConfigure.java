@@ -72,7 +72,7 @@ public class GuidAutoConfigure {
         String curatorVer = CuratorVersion.getVersion();
         String advice = "Please check 'https://github.com/stun4j/stun4j-guid/blob/master/README.md#notes' for detail.";
         state(curatorVer != null,
-            "You must placed 'org.apache.curator:curator-recipes:2.13.0 or 3.3.0+' in your project's classpath,or you can't communicate with zk. "
+            "You must place 'org.apache.curator:curator-recipes:2.13.0 or 3.3.0+' in your project's classpath,or you can't communicate with zk. "
                 + advice);
         LOG.info("Your 'curator-recipes' version is {},the recommended version is 2.13.0 or 3.3.0+. {}", curatorVer,
             advice);
