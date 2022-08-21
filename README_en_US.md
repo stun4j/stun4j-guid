@@ -6,9 +6,9 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
+| 2.0.0 | Support semantic customization, support multiton | 08/21/2022 |
 | 1.2.2 | Introduced customized spring-boot-starter | 04/16/2022 |
 | 1.1.6 | Another out-of-box GUID acquisition strategy is introduced, which can automatically obtain the GUID based on the end of the IP address | 03/21/2022 |
-| 1.1.5 | Improved robustness of core components | 01/25/2022 |
 
 ## Feature
 * Global unique id-generating,fully distributed(treat system-process as minimal working unit,hence,the id-gen is fully workable,even in the pseudo-cluster environment)
@@ -27,7 +27,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can get i
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid-core</artifactId>
-  <version>1.2.2</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 #### Or
@@ -36,7 +36,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can get i
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-guid-spring-boot-starter</artifactId>
-  <version>1.2.2</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 ### Method 2: Building from the sources
