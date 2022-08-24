@@ -34,6 +34,7 @@ Long id2 = LocalGuid.instance().next();
 ## 方式2(**推荐\***)：结合分布式协调者使用("进程标识唯一性"自动得到维护)：
 ```java
 //步骤1.初始化(仅需一次，采用zookeeper作为分布式协调者)
+//语义定制说明 见'方式1'
 LocalGuid guid = LocalZkGuid.init("localhost:2181"/*zk地址*/,
 15/*digits*/, 
 4/*dcIdBits*/, 4/*wkIdBits*/, 
@@ -47,18 +48,26 @@ true/*fixedDigitsEnabled*/)
 ```java
 //步骤1.初始化(仅需一次，一般即应用启动时)
 //指定本机IP前缀(多网卡场景，辅助挑选出正确的ip，目前仅支持IPV4)
+/*
+* shortDcWkIdBitsEnabled 表示dcIdBits和wkIdBits是否启用精简模式
+*   如shortDcWkIdBitsEnabled=true，那么dcIdBits和wkIdBits均为4
+*   如shortDcWkIdBitsEnabled=false，那么dcIdBits和wkIdBits均为5
+*   
+* 其它语义定制说明 见'方式1'
+*/
 LocalGuid guid
 = LocalGuid.initWithLocalIp(15/*digits*/, 
-4/*dcIdBits*/, 4/*wkIdBits*/, 
+true/*shortDcWkIdBitsEnabled*/,
 3/*seqBits*/, 
 true/*fixedDigitsEnabled*/, "192.168.1");
+
 //或 指定本机IP前缀、同时指定IP段(目前仅支持'第3段')
 = LocalGuid.initWithLocalIp(15/*digits*/, 
-4/*dcIdBits*/, 4/*wkIdBits*/, 
+true/*shortDcWkIdBitsEnabled*/, 
 3/*seqBits*/, 
 true/*fixedDigitsEnabled*/, "192.168", 1);//在 192.168.1.* 中挑选
 
 //步骤2.获取id(同 '方式1的步骤2'，略)
 ```
-
+# 
 [< 回索引](../../README.md)
