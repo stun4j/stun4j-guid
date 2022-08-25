@@ -31,7 +31,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can get i
 </dependency>
 ```
 #### Or
-#### Get the customized **spring-boot-starter**, it is easy to use in spring-boot projects
+#### Get the **spring-boot-starter**, it is easy to use in spring-boot projects
 ```xml
 <dependency>
   <groupId>com.stun4j.boot</groupId>
@@ -48,7 +48,7 @@ $ mvn clean package
 
 ## How to use
 ### [How to use the **core library**](stun4j-guid-core/README_en_US.md)
-### [How to use the customized **spring-boot-starter**](stun4j-guid-spring-boot-starter/README_en_US.md)
+### [How to use the **spring-boot-starter**](stun4j-guid-spring-boot-starter/README_en_US.md)
 
 ## Notes
 1. This ID generation algorithm is time sensitive, so the cluster environment must turn on the NTP service (do as much clock forward synchronization as possible) to ensure overall correctness and availability

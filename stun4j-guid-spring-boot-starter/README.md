@@ -1,4 +1,4 @@
-# stun4j-guid-spring-boot-starter使用说明 / [English](README_en_US.md)
+# spring-boot-starter使用说明 / [English](README_en_US.md)
 
 ## 1. 快速开始
 ### 使用`@EnableGuid`注解

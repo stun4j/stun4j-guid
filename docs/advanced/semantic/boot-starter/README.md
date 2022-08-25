@@ -1,0 +1,89 @@
+# 语义定制-spring-boot-starter使用说明 / [English](README_en_US.md)
+
+## 1. 快速开始
+### 使用`@EnableGuid`注解
+在使用`@SpringBootApplication`注解的地方，使用`@EnableGuid`注解，如下：
+```java
+@SpringBootApplication
+@EnableGuid
+public class SampleApplication {
+  public static void main(String[] args) {
+    SpringApplication.run(SampleApplication.class, args);
+  }
+}
+```
+### 通过注入的core-api，在业务代码中获取guid
+```java
+@Service
+public class BizService {
+  @Autowired
+  LocalGuid guid;
+  //略...
+  public void doBiz() {
+    //略...
+    Long id = guid.next();
+    //略...
+  }
+}
+```
+
+## 2. `application.yml`配置详解
+关于语义定制的**详细参数**含义（如digits、seq-bits等），具体请参考[**语义定制-核心库如何使用**](../../core/README.md)
+### 2.1 对应于[**核心库使用-方式3**](/stun4j-guid-core/README.md)的配置(**默认\***)
+```yml
+#略...
+
+stun4j:
+  guid: #可选(如不出现，则采用默认配置)
+    strategy: local-ip #策略:识别本机IP(可选,默认值:local-ip)
+    ip-start-with: <your-local-ip-prefix,如192.168.28> #指定本机ip前缀(可选,如不指定,将自动挑选本机IP)
+    bit-editing: #可选(如不出现，则采用默认配置)
+      enabled: true #是否启用位编辑(也即'语义定制')(可选,默认值:false)
+      digits: 19 #id数值位数(可选,默认值:19)
+      short-dc-wk-id-bits-when-using-local-ip-strategy: false #是否启用精简模式(仅本方式有效,可选,默认值:false)
+      seq-bits: 12 #sequence所占的比特位数(可选,默认值:12)
+      fixed-digits-enabled: false #id长度是否固定(可选,默认值:false)
+
+#略...
+```
+### 2.2 对应于[**核心库使用-方式1**](/stun4j-guid-core/README.md)的配置
+```yml
+#略...
+
+stun4j:
+  guid: #可选(如不出现，则采用默认配置)
+    strategy: manual #策略:手动指定(可选,默认值:local-ip)
+    datacenter-id: <your-datacenter-id,如0> #可选,默认值:0, 取值范围[0,31]
+    worker-id: <your-worker-id,如0> #可选,默认值:0, 取值范围[0,31]
+    bit-editing: #可选(如不出现，则采用默认配置)
+      enabled: true #是否启用位编辑(也即'语义定制')(可选,默认值:false)
+      digits: 19 #id数值位数(可选,默认值:19)
+      datacenter-id-bits: 5 #datacenterId所占的比特位数(可选,默认值:5)
+      worker-id-bits: 5 #workerId所占的比特位数(可选,默认值:5)
+      seq-bits: 12 #sequence所占的比特位数(可选,默认值:12)
+      fixed-digits-enabled: false #id长度是否固定(可选,默认值:false)
+
+#略...
+```
+### 2.3 对应于[**核心库使用-方式2**](/stun4j-guid-core/README.md)的配置
+```yml
+#略...
+
+stun4j:
+  guid: #可选(如不出现，则采用默认配置)
+    strategy: zk #策略:结合zookeeper使用(可选,默认值:local-ip)
+    zk-conn-addr: <your-zk-address,如192.168.28.161:2181> #zookeeper地址(可选,默认值:localhost:2181)
+    zk-namespace: <your-zk-namespace> #guid的zk命名空间(可选,默认值:stun4j-guid)
+    ip-start-with: <your-local-ip-prefix,如192.168.28> #指定本机ip前缀(可选,如不指定,将自动挑选本机IP)
+    bit-editing: #可选(如不出现，则采用默认配置)
+      enabled: true #是否启用位编辑(也即'语义定制')(可选,默认值:false)
+      digits: 19 #id数值位数(可选,默认值:19)
+      datacenter-id-bits: 5 #datacenterId所占的比特位数(可选,默认值:5)
+      worker-id-bits: 5 #workerId所占的比特位数(可选,默认值:5)
+      seq-bits: 12 #sequence所占的比特位数(可选,默认值:12)
+      fixed-digits-enabled: false #id长度是否固定(可选,默认值:false)
+        
+#略...
+```
+# 
+[< 回索引](../README.md)

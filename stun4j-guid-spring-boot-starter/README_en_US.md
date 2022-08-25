@@ -1,4 +1,4 @@
-# How to use stun4j-guid-spring-boot-starter / [Chinese](README.md)
+# How to use spring-boot-starter / [Chinese](README.md)
 
 ## 1. Quick start
 ### Use the `@EnableGuid` Annotation

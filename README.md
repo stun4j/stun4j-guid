@@ -33,7 +33,7 @@
 </dependency>
 ```
 #### 或者
-#### 获取专属的**spring-boot-starter**，便于在spring-boot工程中使用
+#### 获取**spring-boot-starter**，便于在spring-boot工程中使用
 ```xml
 <dependency>
   <groupId>com.stun4j.boot</groupId>
@@ -50,7 +50,7 @@ $ mvn clean package
 
 ## 如何使用
 ### [**核心库**如何使用](stun4j-guid-core/README.md)
-### [专属的**spring-boot-starter**如何使用](stun4j-guid-spring-boot-starter/README.md)
+### [**spring-boot-starter**如何使用](stun4j-guid-spring-boot-starter/README.md)
 ## 高级特性
 ### [语义定制](docs/advanced/README.md)
 ### [多例](docs/advanced/README.md)
