@@ -28,7 +28,7 @@ public class BizService {
 ```
 
 ## 2. `application.yml`配置详解
-关于语义定制的**详细参数**含义（如digits、seq-bits等），具体请参考[**语义定制-核心库如何使用**](../../core/README.md)
+关于语义定制的**详细参数**含义（如digits、seq-bits等），具体请参考[**语义定制-核心库如何使用**](../core/README.md)
 ### 2.1 对应于[**核心库使用-方式3**](/stun4j-guid-core/README.md)的配置(**默认\***)
 ```yml
 #略...
