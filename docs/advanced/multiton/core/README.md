@@ -4,7 +4,7 @@
 LocalGuidMultiton._enabled = true;
 ```
 ## 2. 单例和多例的共存使用
-### 通过`LocalGuid`使用单例，通过`LocalGuidMultiton#instance`使用多例
+### 通过`LocalGuid#init`使用默认单例，通过`LocalGuidMultiton#instance`使用多例
 ```java
 //这个是全局单例的初始化和使用
 //LocalGuid.init(0,0)等价于LocalGuid.init(0,0, 19, 5, 5, 12, false)

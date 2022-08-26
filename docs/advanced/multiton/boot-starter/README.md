@@ -25,12 +25,12 @@ stun4j:
 #略...
 ```
 ## 3. 单例和多例的共存使用
-### 通过注入的LocalGuid使用单例，通过`LocalGuidMultiton#instance`使用多例
+### 通过注入的LocalGuid使用默认单例，通过`LocalGuidMultiton#instance`使用多例
 ```java
 @Service
 public class BizService {
   @Autowired
-  LocalGuid dftSolo;//这个是全局单例(即你在application.yml中通过'非multiton节点'配置的guid)
+  LocalGuid dftSolo;//这个是默认单例(即你在application.yml中通过'非multiton节点'配置的guid)
   //略...
   public void doBiz() {
     //略...
@@ -38,7 +38,7 @@ public class BizService {
     //略...
     
     /*
-     * 下面就是多例的展示了，假设全局dftSolo生成的是默认的18位以上的整数
+     * 下面就是多例的展示了，假设默认dftSolo生成的是18位以上的整数
      * 而下面两个solo的生成模式完全一致，都是(16,4,4,5,false)
      * 所以fooSolo和anotherFooSolo是同一个实例(引用相同)，即fooSolo == anotherFooSolo
      * 但fooSolo != dftSolo
