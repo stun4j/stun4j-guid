@@ -54,7 +54,7 @@ public class BizService {
      */ 
     LocalGuid barSolo = LocalGuidMultiton.instance(16, 4, 4, 5, true);
     
-    //这样，在系统中，dftSolo、fooSolo和barSolo都按各自的模式生成不同的id，略...
+    //这样，在系统中，dftSolo、fooSolo和barSolo都按各自的模式生成着不同的id，略...
   }
 }
 ```
