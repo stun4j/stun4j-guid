@@ -13,7 +13,7 @@ public class SampleApplication {
   }
 }
 ```
-### Get guid through injected core-api in user(business) code
+### Get guid through the injected `LocalGuid instance` in business code
 ```java
 @Service
 public class BizService {

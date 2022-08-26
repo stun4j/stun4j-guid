@@ -12,7 +12,7 @@ public class SampleApplication {
   }
 }
 ```
-### 通过注入的core-api，在业务代码中获取guid
+### 通过注入的LocalGuid实例，在业务代码中获取guid
 ```java
 @Service
 public class BizService {
@@ -86,4 +86,4 @@ stun4j:
 #略...
 ```
 # 
-[< 回索引](../README.md)
+[< 回索引](../../README.md)
