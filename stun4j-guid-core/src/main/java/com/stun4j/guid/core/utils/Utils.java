@@ -39,7 +39,7 @@ public final class Utils {
   }
 
   public static void sleepSeconds(int seconds) {
-    LockSupport.parkNanos(seconds * NANOS_PER_SECONDS);
+    LockSupport.parkNanos((long)seconds * NANOS_PER_SECONDS);
   }
 
   public static <T> Pair<Long, T> timeAwareRun(Supplier<T> supplier) {
