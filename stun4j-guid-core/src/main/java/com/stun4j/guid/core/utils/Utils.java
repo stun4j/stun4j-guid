@@ -38,7 +38,7 @@ public final class Utils {
     LockSupport.parkNanos(ms * NANOS_PER_MS);
   }
 
-  public static void sleepSeconds(long seconds) {
+  public static void sleepSeconds(int seconds) {
     LockSupport.parkNanos(seconds * NANOS_PER_SECONDS);
   }
 
