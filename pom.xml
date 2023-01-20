@@ -58,7 +58,7 @@
 	</modules>
 
 	<properties>
-		<revision>2.0.1-SNAPSHOT</revision>
+		<revision>2.0.1</revision>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
 
@@ -70,7 +70,6 @@
 
 		<!-- test -->
 		<log4j2.version>2.19.0</log4j2.version>
-		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<guava.version>31.1-jre</guava.version>
 	</properties>
 
