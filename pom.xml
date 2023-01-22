@@ -199,9 +199,6 @@
 					<value>true</value>
 				</property>
 			</activation>
-			<properties>
-				<curator.version>2.13.0</curator.version>
-			</properties>
 			<build>
 				<plugins>
 					<plugin>
