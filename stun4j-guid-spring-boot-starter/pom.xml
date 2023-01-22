@@ -8,13 +8,13 @@
 	</parent>
 	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-guid-spring-boot-starter</artifactId>
-  <name>Stun4J Guid Spring Boot Starter</name>
+	<name>Stun4J Guid Spring Boot Starter</name>
 
 	<description>Starter for using Stun4J Guid</description>
 	<url>https://github.com/stun4j/stun4j-guid</url>
 
 	<properties>
-		<curator-recipe.version>2.13.0</curator-recipe.version>
+		<curator.version>5.4.0</curator.version>
 	</properties>
 
 	<dependencies>
@@ -28,14 +28,14 @@
 		<dependency>
 			<groupId>org.apache.curator</groupId>
 			<artifactId>curator-recipes</artifactId>
-			<version>${curator-recipe.version}</version>
+			<version>${curator.version}</version>
+			<optional>true</optional>
 			<exclusions>
 				<exclusion>
 					<groupId>log4j</groupId>
 					<artifactId>log4j</artifactId>
 				</exclusion>
 			</exclusions>
-			<optional>true</optional>
 		</dependency>
 		<!-- helper -->
 		<dependency>

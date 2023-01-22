@@ -13,7 +13,16 @@
 	<url>https://github.com/stun4j/stun4j-guid</url>
 
 	<properties>
-		<curator.version>2.13.0</curator.version>
+		<!-- About choosing 'Curator' -->
+		<!-- Latest stable version(zk server 3.7+) -->
+		<curator.version>5.4.0</curator.version>
+		<!-- zk server 3.5.5+(eol@2022) has fewer vulnerability -->
+<!-- 		<curator.version>4.3.0</curator.version> -->
+		<!-- zk server 3.5+(eol@2022) supported -->
+		<!-- <curator.version>3.3.0</curator.version> -->
+		<!-- zk server 3.4.14-(eol@2022) supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
+		<!-- <curator.version>2.13.0</curator.version> -->
+		<!-- /About choosing 'Curator' -->
 	</properties>
 
 	<dependencies>
@@ -115,21 +124,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>dev-zk34</id>
-			<properties>
-				<!-- zk server 3.4.14- supported,k8s friendly(let's say if you are using image:'k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10') -->
-				<curator.version>2.13.0</curator.version>
-			</properties>
-		</profile>
-		<profile>
-			<id>dev-zk35</id>
-			<properties>
-				<!-- zk server 3.5+ supported -->
-				<curator.version>3.3.0</curator.version>
-			</properties>
-		</profile>
-	</profiles>
 </project>

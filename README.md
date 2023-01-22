@@ -6,6 +6,7 @@
 
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
+| 2.0.1.1 | 引入漏洞提示、依赖升级 | 2023/01/22 |
 | 2.0.0 | 支持语义化定制、支持多例 | 2022/08/21 |
 | 1.2.2 | 引入量身定制的spring-boot-starter | 2022/04/16 |
 | 1.1.6 | 引入另一种开箱即用的GUID获取策略，可根据IP地址末段自动获取GUID | 2022/03/21 |
@@ -29,7 +30,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid-core</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1.1</version>
 </dependency>
 ```
 #### 或者
@@ -38,7 +39,7 @@
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-guid-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1.1</version>
 </dependency>
 ```
 ### 方式2：通过源码构建
@@ -60,6 +61,7 @@ $ mvn clean package
 2. 采用[Zookeeper](http://zookeeper.apache.org/)作为分布式协调者时，客户端采用[Curator](http://curator.apache.org/)和ZK进行通信，需要注意Curator和Zookeeper的**兼容性**问题
 	* 目前测试下来，Curator **2.13.0** 这个版本的兼容性比较好，可兼容Zookeeper **3.4.10+(server版本)**
 	* 如使用**Zookeeper 3.5+(server版本)**，那么至少应搭配Curator **3.3.0+** 版本
+	* 推荐使用Curator **5.4+** 版本，搭配使用**Zookeeper 3.7+(server版本)**，更少的安全漏洞、更好的组件质量（另外，**Zookeeper 3.7-** 官方已停止维护）
 3. 一个集群支持的进程/节点数量的上限是1024，这是经典snowflake算法非常核心的一点，也就是说datacenterId和workerId的取值范围都是 **[0,31]**，所以有1024种组合，在本框架的实现中也充分映射了这个概念，比如对分布式协调者一个namespace下参与者的数量也做了相同的限制
 4. 直接或间接通过[**核心库-方式3**](stun4j-guid-core/README.md)使用的需额外注意：
     * 虽然本框架提供了灵活的pick ip的方式，但严格来说只有类似如下方式才能确保全局唯一性：

@@ -6,6 +6,7 @@
 
 | Stable Release Version | Major change | Release Date |
 | ------------- | ------------- | ------------|
+| 2.0.1.1 | Introduce vulnerability tip, update dependency | 01/22/2023 |
 | 2.0.0 | Support semantic customization, support multiton | 08/21/2022 |
 | 1.2.2 | Introduced customized spring-boot-starter | 04/16/2022 |
 | 1.1.6 | Another out-of-box GUID acquisition strategy is introduced, which can automatically obtain the GUID based on the end of the IP address | 03/21/2022 |
@@ -27,7 +28,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can get i
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-guid-core</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1.1</version>
 </dependency>
 ```
 #### Or
@@ -36,7 +37,7 @@ Stun4J-Guid is deployed at sonatypes open source maven repository. You can get i
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-guid-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1.1</version>
 </dependency>
 ```
 ### Method 2: Building from the sources
@@ -55,6 +56,7 @@ $ mvn clean package
 2. When [Zookeeper](http://zookeeper.apache.org/) is adopted as the distributed coordinator, the client uses [Curator](http://curator.apache.org/) to communicate with ZK. Therefore, it is necessary to pay attention to the **compatibility** between Curator and Zookeeper
 	* Tests so far shows that Curator **2.13.0** is compatible with **Zookeeper 3.4.10+(server version)**
 	* If you are using **Zookeeper 3.5+(server version)**, you should at least use it with Curator **3.3.0+**
+	* It is recommended to use Curator **5.4+** version and **Zookeeper 3.7+(server version)** together, with fewer security vulnerabilities and better component quality (in addition, **Zookeeper 3.7-** has officially ceased maintenance)
 3. The upper limit of a cluster supporting the number of process/nodes is 1024, that's the way classic snowflake-algorithm works, that is to say, both of datacenterId and workerId scope is [0, 31], so there are 1024 kinds of combination, in the implementation of this framework is fully the concept mapping, e.g. the same restriction is made on the number of participants under a namespace for the distributed coordinator
 4. Extra attention should be paid to those directly or indirectly using [**Core library-Method3**](stun4j-guid-core/README_en_US.md)：
     * Although the framework provides a flexible way to pick IP, strictly speaking, only something like the following can ensure global uniqueness：
